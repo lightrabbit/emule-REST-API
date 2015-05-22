@@ -43,7 +43,7 @@ static char THIS_FILE[] = __FILE__;
 #define	MINPERCENTAGE_TOTRUST		92  // how many percentage of clients most have sent the same hash to make it trustworthy
 
 CList<CAICHRequestedData> CAICHRecoveryHashSet::m_liRequestedData;
-CList<CAICHHash>		  CAICHRecoveryHashSet::m_liAICHHashsStored;
+CMap<CAICHHash, const CAICHHash&, bool, bool> CAICHRecoveryHashSet::m_mapAICHHashsStored;
 CMutex					  CAICHRecoveryHashSet::m_mutKnown2File;
 
 //zz_fly :: known2 buffer
@@ -801,7 +801,8 @@ bool CAICHRecoveryHashSet::SaveHashSet(){
 	}
 	//zz_fly :: known2 buffer
 	//dup check first
-	if ((m_liAICHHashsStored.Find(m_pHashTree.m_Hash) != NULL) || (m_liBufferedHashTree.Find(m_pHashTree) != NULL)){
+	bool value;
+	if ((m_mapAICHHashsStored.Lookup(m_pHashTree.m_Hash, value)) || (m_liBufferedHashTree.Find(m_pHashTree) != NULL)){
 		theApp.QueueDebugLogLine(false, _T("AICH Hashset to write should be already present in known2.met - %s"), m_pHashTree.m_Hash.GetString());
 		return true;
 	}
@@ -881,7 +882,8 @@ bool CAICHRecoveryHashSet::SaveHashSetToFile(bool forced){
 			return true;
 		}
 		*/
-			if (m_liAICHHashsStored.Find(pHashTree.m_Hash) != NULL){
+			bool value;
+			if (m_mapAICHHashsStored.Lookup(pHashTree.m_Hash, value) != NULL){
 				theApp.QueueDebugLogLine(false, _T("AICH Hashset to write should be already present in known2.met - %s"), pHashTree.m_Hash.GetString());
 			}
 			else {
@@ -1311,13 +1313,14 @@ CAICHRequestedData CAICHRecoveryHashSet::GetAICHReqDetails(const  CUpDownClient*
 void CAICHRecoveryHashSet::AddStoredAICHHash(CAICHHash Hash)
 {
 #ifdef _DEBUG
-	if (m_liAICHHashsStored.Find(Hash) != NULL)
-	{
+	bool value;
+	if (m_mapAICHHashsStored.Lookup(Hash, value)) {
 		theApp.QueueDebugLogLine(false, _T("AICH hash storing is not unique - %s"), Hash.GetString());
 		//ASSERT( false );
 	}
 #endif
-	m_liAICHHashsStored.AddTail(Hash);
+	//m_liAICHHashsStored.AddTail(Hash);
+	m_mapAICHHashsStored.SetAt(Hash, true);
 }
 
 bool CAICHRecoveryHashSet::IsPartDataAvailable(uint64 nPartStartPos){

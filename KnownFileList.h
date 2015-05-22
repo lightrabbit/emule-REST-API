@@ -91,6 +91,8 @@ public:
 private:
 	bool	LoadKnownFiles();
 	bool	LoadCancelledFiles();
+	CString GetKnownFilesKey(const CKnownFile *knownFile) const;
+	CString GetKnownFilesKey(LPCTSTR filename, uint32 date, uint64 size) const;
 
 	uint16 	requested;
 	uint16 	accepted;
@@ -98,6 +100,7 @@ private:
 	uint32 	m_nLastSaved;
 	CKnownFilesMap		m_Files_map;
 	CancelledFilesMap	m_mapCancelledFiles;
+	CTypedPtrMap<CMapStringToPtr, CString, CKnownFile*> m_FindKnownFiles_map;
 	// for faster access, map of files indexed by AICH-hash, not garantueed to be complete at this point (!)
 	// (files which got AICH hashed later will not be added yet, because we don't need them, make sure to change this if needed)
 	KnonwFilesByAICHMap m_mapKnownFilesByAICH;

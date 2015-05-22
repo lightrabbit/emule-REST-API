@@ -253,7 +253,9 @@ public:
 	static CMutex						m_mutSaveHashSet; //make sure there is only one saving process in progress.
 	//zz_fly :: end
 private:
-	static CList<CAICHHash>				m_liAICHHashsStored; // contains all AICH hahses stored in known2*.met
+	//static CList<CAICHHash>				m_liAICHHashsStored; // contains all AICH hahses stored in known2*.met
+	static CMap<CAICHHash, const CAICHHash&, bool, bool> m_mapAICHHashsStored;
+
 	CKnownFile*		m_pOwner;
 	EAICHStatus		m_eStatus;
 	CArray<CAICHUntrustedHash> m_aUntrustedHashs;

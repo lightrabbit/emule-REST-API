@@ -140,6 +140,9 @@ private: // Automatic shared files updater [MoNKi] - Stulle
 	uint32 m_lastPublishKadSrc;
 	uint32 m_lastPublishKadNotes;
 	bool bHaveSingleSharedFiles;
+	//optimize for CSharedFileList::GetFileByIndex
+	int m_currPositionIndex;
+	POSITION m_currPositon;
 
 	// ==> PowerShare [ZZ/MorphXT] - Stulle
 public:

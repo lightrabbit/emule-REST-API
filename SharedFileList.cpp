@@ -165,7 +165,8 @@ public:
 
 protected:
 	// can't use a CMap - too many disadvantages in processing the 'list'
-	//CTypedPtrMap<CMapStringToPtr, CString, CPublishKeyword*> m_lstKeywords;
+	// Use CTypedPtrMap to accelerate CPublishKeywordList::FindKeyword
+	CTypedPtrMap<CMapStringToPtr, CStringW, POSITION> m_mapKeywordsPos;
 	CTypedPtrList<CPtrList, CPublishKeyword*> m_lstKeywords;
 	POSITION m_posNextKeyword;
 	UINT m_tNextPublishKeywordTime;
@@ -202,17 +203,13 @@ void CPublishKeywordList::ResetNextKeyword()
 
 CPublishKeyword* CPublishKeywordList::FindKeyword(const CStringW& rstrKeyword, POSITION* ppos) const
 {
-	POSITION pos = m_lstKeywords.GetHeadPosition();
-	while (pos)
+	POSITION pos;
+	if (m_mapKeywordsPos.Lookup(rstrKeyword, pos))
 	{
-		POSITION posLast = pos;
-		CPublishKeyword* pPubKw = m_lstKeywords.GetNext(pos);
-		if (pPubKw->GetKeyword() == rstrKeyword)
-		{
-			if (ppos)
-				*ppos = posLast;
-			return pPubKw;
-		}
+		CPublishKeyword* pPubKw = m_lstKeywords.GetAt(pos);
+		if (ppos)
+			*ppos = pos;
+		return pPubKw;
 	}
 	return NULL;
 }
@@ -229,7 +226,8 @@ void CPublishKeywordList::AddKeywords(CKnownFile* pFile)
 		if (pPubKw == NULL)
 		{
 			pPubKw = new CPublishKeyword(strKeyword);
-			m_lstKeywords.AddTail(pPubKw);
+			POSITION pos = m_lstKeywords.AddTail(pPubKw);
+			m_mapKeywordsPos.SetAt(strKeyword, pos);
 			SetNextPublishTime(0);
 		}
 		if(pPubKw->AddRef(pFile) && pPubKw->GetNextPublishTime() > MIN2S(30))
@@ -260,6 +258,7 @@ void CPublishKeywordList::RemoveKeywords(CKnownFile* pFile)
 				if (pos == m_posNextKeyword)
 					(void)m_lstKeywords.GetNext(m_posNextKeyword);
 				m_lstKeywords.RemoveAt(pos);
+				m_mapKeywordsPos.RemoveKey(strKeyword);
 				delete pPubKw;
 				SetNextPublishTime(0);
 			}
@@ -273,6 +272,7 @@ void CPublishKeywordList::RemoveAllKeywords()
 	while (pos)
 		delete m_lstKeywords.GetNext(pos);
 	m_lstKeywords.RemoveAll();
+	m_mapKeywordsPos.RemoveAll();
 	ResetNextKeyword();
 	SetNextPublishTime(0);
 }
@@ -296,6 +296,7 @@ void CPublishKeywordList::PurgeUnreferencedKeywords()
 			if (posLast == m_posNextKeyword)
 				(void)m_lstKeywords.GetNext(m_posNextKeyword);
 			m_lstKeywords.RemoveAt(posLast);
+			m_mapKeywordsPos.RemoveKey(pPubKw->GetKeyword());
 			delete pPubKw;
 			SetNextPublishTime(0);
 		}
@@ -469,6 +470,9 @@ CSharedFileList::CSharedFileList(CServerConnect* in_server)
 	*/
 	// SLUGFILLER End
 	m_dwFile_map_updated = 0; // requpfile optimization [SiRoB] - Stulle
+	//optimize for CSharedFileList::GetFileByIndex
+	m_currPositon = NULL;
+	m_currPositionIndex = 0;
 }
 
 CSharedFileList::~CSharedFileList(){
@@ -548,6 +552,10 @@ void CSharedFileList::FindSharedFiles()
 			m_UnsharedFiles_map.SetAt(CSKey(cur_file->GetFileHash()), true);
 			listlock.Lock();
 			m_Files_map.RemoveKey(key);
+			//reset optimize on remove element from m_Files_map
+			m_currPositionIndex = 0;
+			m_currPositon = NULL;
+
 			m_dwFile_map_updated = GetTickCount(); // requpfile optimization [SiRoB] - Stulle
 			listlock.Unlock();
 			theApp.uploadqueue->SetSuperiorInQueueDirty(); // Keep Sup clients in up if there is no other sup client in queue [Stulle] - Stulle
@@ -892,6 +900,9 @@ bool CSharedFileList::RemoveFile(CKnownFile* pFile, bool bDeleted)
 	CSingleLock listlock(&m_mutWriteList);
 	listlock.Lock();
 	bool bResult = (m_Files_map.RemoveKey(CCKey(pFile->GetFileHash())) != FALSE);
+	//reset optimize on remove element from m_Files_map
+	m_currPositionIndex = 0;
+	m_currPositon = NULL;
 	listlock.Unlock();
 	
 	output->RemoveFile(pFile, bDeleted);
@@ -1054,17 +1065,26 @@ void CSharedFileList::SendListToServer(){
 		AddDebugLogLine(false, _T("Server, Sendlist: Packet size:%u"), packet->size);
 	server->SendPacket(packet,true);
 }
-
+//此处可记录pos的值和return前index的值来进行优化
 CKnownFile* CSharedFileList::GetFileByIndex(int index){
-	int count=0;
 	CKnownFile* cur_file;
 	CCKey bufKey;
 
-	for (POSITION pos = m_Files_map.GetStartPosition();pos != 0;){
-		m_Files_map.GetNextAssoc(pos,bufKey,cur_file);
-		if (index==count)
+	if (m_currPositon == NULL || m_currPositionIndex > index) {
+		m_currPositon = m_Files_map.GetStartPosition();
+		m_currPositionIndex = 0;
+	}
+
+	for (; m_currPositon != NULL;){
+		m_Files_map.GetNextAssoc(m_currPositon, bufKey, cur_file);
+		if (index == m_currPositionIndex){
+			m_currPositionIndex++;
 			return cur_file;
-		count++;
+		}
+		else 
+		{
+			m_currPositionIndex++;
+		}
 	}
 	return 0;
 }

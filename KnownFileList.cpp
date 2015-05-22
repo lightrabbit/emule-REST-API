@@ -406,6 +406,7 @@ void CKnownFileList::Clear()
 	    delete pFile;
 	}
 	m_Files_map.RemoveAll();
+	m_FindKnownFiles_map.RemoveAll();
 }
 
 void CKnownFileList::Process()
@@ -441,6 +442,7 @@ bool CKnownFileList::SafeAddKFile(CKnownFile* toadd)
 		// shared file list -> crash.
 
 		m_Files_map.RemoveKey(CCKey(pFileInMap->GetFileHash()));
+		m_FindKnownFiles_map.RemoveKey(GetKnownFilesKey(pFileInMap));
 		m_mapKnownFilesByAICH.RemoveKey(pFileInMap->GetFileIdentifier().GetAICHHash());
 		//This can happen in a couple situations..
 		//File was renamed outside of eMule.. 
@@ -489,6 +491,7 @@ bool CKnownFileList::SafeAddKFile(CKnownFile* toadd)
 		delete pFileInMap;
 	}
 	m_Files_map.SetAt(key, toadd);
+	m_FindKnownFiles_map.SetAt(GetKnownFilesKey(toadd), toadd);
 	if (bRemovedDuplicateSharedFile) {
 		theApp.sharedfiles->SafeAddKFile(toadd);
 	}
@@ -497,14 +500,24 @@ bool CKnownFileList::SafeAddKFile(CKnownFile* toadd)
 	return true;
 }
 
+CString CKnownFileList::GetKnownFilesKey(const CKnownFile *knownFile) const
+{
+	CString key = knownFile->GetFileName();
+	key.AppendFormat(_T("%08x%016X"), (uint32)knownFile->GetUtcFileDate(), (uint64)knownFile->GetFileSize());
+	return key;
+}
+
+CString CKnownFileList::GetKnownFilesKey(LPCTSTR filename, uint32 date, uint64 size) const
+{
+	CString key = filename;
+	key.AppendFormat(_T("%08x%016X"), date, size);
+	return key;
+}
+
 CKnownFile* CKnownFileList::FindKnownFile(LPCTSTR filename, uint32 date, uint64 size) const
 {
-	POSITION pos = m_Files_map.GetStartPosition();
-	while (pos != NULL)
-	{
-		CKnownFile* cur_file;
-		CCKey key;
-		m_Files_map.GetNextAssoc(pos, key, cur_file);
+	CKnownFile* cur_file;
+	if (m_FindKnownFiles_map.Lookup(GetKnownFilesKey(filename, date, size), cur_file)) {
 		if (cur_file->GetUtcFileDate() == date && cur_file->GetFileSize() == size && !_tcscmp(filename, cur_file->GetFileName()))
 			return cur_file;
 	}
@@ -768,6 +781,7 @@ bool CKnownFileList::RemoveKnownFile(CKnownFile *toRemove){
 			m_Files_map.GetNextAssoc(pos, key, cur_file);
 			if (toRemove == cur_file){
 				m_Files_map.RemoveKey(key);
+				m_FindKnownFiles_map.RemoveKey(GetKnownFilesKey(cur_file));
 				delete cur_file;
 				return true;
 			}
@@ -792,6 +806,7 @@ void CKnownFileList::ClearHistory(){
 		m_Files_map.GetNextAssoc( pos, key, cur_file );
 		if (!theApp.sharedfiles->IsFilePtrInList(cur_file)){
 			m_Files_map.RemoveKey(key);
+			m_FindKnownFiles_map.RemoveKey(GetKnownFilesKey(cur_file));
 			//also remove it from transferwindow:
 			if (cur_file->IsKindOf(RUNTIME_CLASS(CPartFile)))
 				theApp.emuledlg->transferwnd->GetDownloadList()->ClearCompleted(static_cast<CPartFile*>(cur_file));
