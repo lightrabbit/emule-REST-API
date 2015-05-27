@@ -92,23 +92,27 @@ public:
 
 	BOOL AddRef(CKnownFile* pFile)
 	{
-		if (m_aFiles.Find(pFile) != -1)
+		CKnownFile* pTmp;
+		if (m_mapFiles.Lookup(pFile, pTmp))
 		{
 			ASSERT(0);
 			return FALSE;
 		}
+		m_mapFiles.SetAt(pFile, pFile);
 		return m_aFiles.Add(pFile);
 	}
 
 	int RemoveRef(CKnownFile* pFile)
 	{
 		m_aFiles.Remove(pFile);
+		m_mapFiles.RemoveKey(pFile);
 		return m_aFiles.GetSize();
 	}
 
 	void RemoveAllReferences()
 	{
 		m_aFiles.RemoveAll();
+		m_mapFiles.RemoveAll();
 	}
 
 	void RotateReferences(int iRotateSize)
@@ -132,6 +136,7 @@ protected:
 	UINT m_tNextPublishTime;
 	UINT m_uPublishedCount;
 	CSimpleKnownFileArray m_aFiles;
+	CTypedPtrMap<CMapPtrToPtr, CKnownFile*, CKnownFile*> m_mapFiles;
 };
 
 
@@ -552,6 +557,7 @@ void CSharedFileList::FindSharedFiles()
 			m_UnsharedFiles_map.SetAt(CSKey(cur_file->GetFileHash()), true);
 			listlock.Lock();
 			m_Files_map.RemoveKey(key);
+			m_IsFilePtrInList_map.RemoveKey(cur_file);
 			//reset optimize on remove element from m_Files_map
 			m_currPositionIndex = 0;
 			m_currPositon = NULL;
@@ -810,6 +816,7 @@ bool CSharedFileList::AddFile(CKnownFile* pFile)
 	CSingleLock listlock(&m_mutWriteList);
 	listlock.Lock();	
 	m_Files_map.SetAt(key, pFile);
+	m_IsFilePtrInList_map.SetAt(pFile, pFile);
 	m_dwFile_map_updated = GetTickCount(); // requpfile optimization [SiRoB] - Stulle
 	listlock.Unlock();
 	theApp.uploadqueue->SetSuperiorInQueueDirty(); // Keep Sup clients in up if there is no other sup client in queue [Stulle] - Stulle
@@ -900,6 +907,7 @@ bool CSharedFileList::RemoveFile(CKnownFile* pFile, bool bDeleted)
 	CSingleLock listlock(&m_mutWriteList);
 	listlock.Lock();
 	bool bResult = (m_Files_map.RemoveKey(CCKey(pFile->GetFileHash())) != FALSE);
+	m_IsFilePtrInList_map.RemoveKey(pFile);
 	//reset optimize on remove element from m_Files_map
 	m_currPositionIndex = 0;
 	m_currPositon = NULL;
@@ -1398,14 +1406,9 @@ bool CSharedFileList::IsFilePtrInList(const CKnownFile* file) const
 {
 	if (file)
 	{
-		POSITION pos = m_Files_map.GetStartPosition();
-		while (pos)
-		{
-			CCKey key;
-			CKnownFile* cur_file;
-			m_Files_map.GetNextAssoc(pos, key, cur_file);
-			if (file == cur_file)
-				return true;
+		CKnownFile* tmpFile;
+		if (m_IsFilePtrInList_map.Lookup((CKnownFile*)file, tmpFile)) {
+			return true;
 		}
 	}
 	return false;

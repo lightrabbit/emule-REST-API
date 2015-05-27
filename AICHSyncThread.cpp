@@ -252,10 +252,20 @@ int CAICHSyncThread::Run()
 	// now we check that all files which are in the sharedfilelist have a corresponding hash in out list
 	// those who don'T are added to the hashinglist
 	CList<CAICHHash> liUsedHashs;	
+	CMap<CAICHHash, const CAICHHash&, bool, bool> mapKnown2Hashes;
+	CMap<CAICHHash, const CAICHHash&, bool, bool> mapKnown2Hashes_un;
 	CSingleLock sharelock(&theApp.sharedfiles->m_mutWriteList);
 	sharelock.Lock();
 
 	bool bDbgMsgCreatingPartHashs = true;
+	for (POSITION pos = liKnown2Hashs.GetHeadPosition(); pos != 0;) {
+		CAICHHash current_hash = liKnown2Hashs.GetNext(pos);
+		mapKnown2Hashes.SetAt(current_hash, true);
+	}
+	for (POSITION pos = liKnown2Hashs_un.GetHeadPosition(); pos != 0;) {
+		CAICHHash current_hash = liKnown2Hashs_un.GetNext(pos);
+		mapKnown2Hashes_un.SetAt(current_hash, true);
+	}
 	for (int i = 0; i < theApp.sharedfiles->GetCount(); i++){
 		CKnownFile* pCurFile = theApp.sharedfiles->GetFileByIndex(i);
 		if (pCurFile != NULL && !pCurFile->IsPartFile() )
@@ -264,85 +274,76 @@ int CAICHSyncThread::Run()
 				return 0;
 			if (pCurFile->GetFileIdentifier().HasAICHHash()){
 				bool bFound = false;
-				for (POSITION pos = liKnown2Hashs.GetHeadPosition();pos != 0;)
-				{
-					CAICHHash current_hash = liKnown2Hashs.GetNext(pos);
-					if (current_hash == pCurFile->GetFileIdentifier().GetAICHHash()){
-						bFound = true;
-						liUsedHashs.AddTail(current_hash);
-						pCurFile->SetAICHRecoverHashSetAvailable(true);
-						// Has the file the proper AICH Parthashset? If not probably upgrading, create it
-						if (!pCurFile->GetFileIdentifier().HasExpectedAICHHashCount())
+				if (mapKnown2Hashes.Lookup(pCurFile->GetFileIdentifier().GetAICHHash(), bFound)) {
+					bFound = true;
+					liUsedHashs.AddTail(pCurFile->GetFileIdentifier().GetAICHHash());
+					pCurFile->SetAICHRecoverHashSetAvailable(true);
+					// Has the file the proper AICH Parthashset? If not probably upgrading, create it
+					if (!pCurFile->GetFileIdentifier().HasExpectedAICHHashCount())
+					{
+						if (bDbgMsgCreatingPartHashs)
 						{
-							if (bDbgMsgCreatingPartHashs)
-							{
-								bDbgMsgCreatingPartHashs = false;
-								DebugLogWarning(_T("Missing AICH Part Hashsets for known files - maybe upgrading from earlier version. Creating them out of full AICH Recovery Hashsets, shouldn't take too long"));
-							}
-							CAICHRecoveryHashSet tempHashSet(pCurFile, pCurFile->GetFileSize());
-							tempHashSet.SetMasterHash(pCurFile->GetFileIdentifier().GetAICHHash(), AICH_HASHSETCOMPLETE);
-							if (!tempHashSet.LoadHashSet())
-							{
-								ASSERT( false );
-								DebugLogError(_T("Failed to load full AICH Recovery Hashset - known2.met might be corrupt. Unable to create AICH Part Hashset - %s"), pCurFile->GetFileName());
-							}
-							else
-							{
-								if (!pCurFile->GetFileIdentifier().SetAICHHashSet(tempHashSet))
-								{
-									DebugLogError(_T("Failed to create AICH Part Hashset out of full AICH Recovery Hashset - %s"), pCurFile->GetFileName());
-									ASSERT( false );
-								}
-								ASSERT(pCurFile->GetFileIdentifier().HasExpectedAICHHashCount());
-							}
+							bDbgMsgCreatingPartHashs = false;
+							DebugLogWarning(_T("Missing AICH Part Hashsets for known files - maybe upgrading from earlier version. Creating them out of full AICH Recovery Hashsets, shouldn't take too long"));
 						}
-						//theApp.QueueDebugLogLine(false, _T("%s - %s"), current_hash.GetString(), pCurFile->GetFileName());
-						/*#ifdef _DEBUG
-						// in debugmode we load and verify all hashsets
-						CAICHRecoveryHashSet* pTempHashSet = new CAICHRecoveryHashSet(pCurFile);
-						pTempHashSet->SetFileSize(pCurFile->GetFileSize());
-						pTempHashSet->SetMasterHash(pCurFile->GetFileIdentifier().GetAICHHash(), AICH_HASHSETCOMPLETE)
-						ASSERT( pTempHashSet->LoadHashSet() );
-						delete pTempHashSet;
-#endif*/
-						break;
+						CAICHRecoveryHashSet tempHashSet(pCurFile, pCurFile->GetFileSize());
+						tempHashSet.SetMasterHash(pCurFile->GetFileIdentifier().GetAICHHash(), AICH_HASHSETCOMPLETE);
+						if (!tempHashSet.LoadHashSet())
+						{
+							ASSERT( false );
+							DebugLogError(_T("Failed to load full AICH Recovery Hashset - known2.met might be corrupt. Unable to create AICH Part Hashset - %s"), pCurFile->GetFileName());
+						}
+						else
+						{
+							if (!pCurFile->GetFileIdentifier().SetAICHHashSet(tempHashSet))
+							{
+								DebugLogError(_T("Failed to create AICH Part Hashset out of full AICH Recovery Hashset - %s"), pCurFile->GetFileName());
+								ASSERT( false );
+							}
+							ASSERT(pCurFile->GetFileIdentifier().HasExpectedAICHHashCount());
+						}
 					}
+					//theApp.QueueDebugLogLine(false, _T("%s - %s"), current_hash.GetString(), pCurFile->GetFileName());
+					/*#ifdef _DEBUG
+					// in debugmode we load and verify all hashsets
+					CAICHRecoveryHashSet* pTempHashSet = new CAICHRecoveryHashSet(pCurFile);
+					pTempHashSet->SetFileSize(pCurFile->GetFileSize());
+					pTempHashSet->SetMasterHash(pCurFile->GetFileIdentifier().GetAICHHash(), AICH_HASHSETCOMPLETE)
+					ASSERT( pTempHashSet->LoadHashSet() );
+					delete pTempHashSet;
+					#endif*/
 				}
 				//zz_fly :: known2 split :: start
 				//the hashset is found in known2_unshared.met
-				for (POSITION pos = liKnown2Hashs_un.GetHeadPosition();pos != 0;){
-					CAICHHash current_hash = liKnown2Hashs_un.GetNext(pos);
-					if (current_hash == pCurFile->GetFileIdentifier().GetAICHHash()){
-						bFound = true;
-						liUsedHashs.AddTail(current_hash);
-						liHashsMoveToKnown2.AddTail(current_hash);
-						pCurFile->SetAICHRecoverHashSetAvailable(true);
-						// Has the file the proper AICH Parthashset? If not probably upgrading, create it
-						if (!pCurFile->GetFileIdentifier().HasExpectedAICHHashCount())
+				if (mapKnown2Hashes_un.Lookup(pCurFile->GetFileIdentifier().GetAICHHash(), bFound)){
+					bFound = true;
+					liUsedHashs.AddTail(pCurFile->GetFileIdentifier().GetAICHHash());
+					liHashsMoveToKnown2.AddTail(pCurFile->GetFileIdentifier().GetAICHHash());
+					pCurFile->SetAICHRecoverHashSetAvailable(true);
+					// Has the file the proper AICH Parthashset? If not probably upgrading, create it
+					if (!pCurFile->GetFileIdentifier().HasExpectedAICHHashCount())
+					{
+						if (bDbgMsgCreatingPartHashs)
 						{
-							if (bDbgMsgCreatingPartHashs)
-							{
-								bDbgMsgCreatingPartHashs = false;
-								DebugLogWarning(_T("Missing AICH Part Hashsets for known files - maybe upgrading from earlier version. Creating them out of full AICH Recovery Hashsets, shouldn't take too long"));
-							}
-							CAICHRecoveryHashSet tempHashSet(pCurFile, pCurFile->GetFileSize());
-							tempHashSet.SetMasterHash(pCurFile->GetFileIdentifier().GetAICHHash(), AICH_HASHSETCOMPLETE);
-							if (!tempHashSet.LoadHashSet())
-							{
-								ASSERT( false );
-								DebugLogError(_T("Failed to load full AICH Recovery Hashset - known2.met might be corrupt. Unable to create AICH Part Hashset - %s"), pCurFile->GetFileName());
-							}
-							else
-							{
-								if (!pCurFile->GetFileIdentifier().SetAICHHashSet(tempHashSet))
-								{
-									DebugLogError(_T("Failed to create AICH Part Hashset out of full AICH Recovery Hashset - %s"), pCurFile->GetFileName());
-									ASSERT( false );
-								}
-								ASSERT(pCurFile->GetFileIdentifier().HasExpectedAICHHashCount());
-							}
+							bDbgMsgCreatingPartHashs = false;
+							DebugLogWarning(_T("Missing AICH Part Hashsets for known files - maybe upgrading from earlier version. Creating them out of full AICH Recovery Hashsets, shouldn't take too long"));
 						}
-						break;
+						CAICHRecoveryHashSet tempHashSet(pCurFile, pCurFile->GetFileSize());
+						tempHashSet.SetMasterHash(pCurFile->GetFileIdentifier().GetAICHHash(), AICH_HASHSETCOMPLETE);
+						if (!tempHashSet.LoadHashSet())
+						{
+							ASSERT( false );
+							DebugLogError(_T("Failed to load full AICH Recovery Hashset - known2.met might be corrupt. Unable to create AICH Part Hashset - %s"), pCurFile->GetFileName());
+						}
+						else
+						{
+							if (!pCurFile->GetFileIdentifier().SetAICHHashSet(tempHashSet))
+							{
+								DebugLogError(_T("Failed to create AICH Part Hashset out of full AICH Recovery Hashset - %s"), pCurFile->GetFileName());
+								ASSERT( false );
+							}
+							ASSERT(pCurFile->GetFileIdentifier().HasExpectedAICHHashCount());
+						}
 					}
 				}
 				//zz_fly :: known2 split :: end

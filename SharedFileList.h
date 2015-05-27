@@ -120,6 +120,7 @@ protected:
 
 private:
 	CMap<CCKey,const CCKey&,CKnownFile*,CKnownFile*> m_Files_map;
+	CTypedPtrMap<CMapPtrToPtr, CKnownFile*, CKnownFile*> m_IsFilePtrInList_map;
 	CMap<CSKey,const CSKey&, bool, bool>			 m_UnsharedFiles_map;
 	CMapStringToString m_mapPseudoDirNames;
 	CPublishKeywordList* m_keywords;
