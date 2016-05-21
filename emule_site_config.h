@@ -154,7 +154,7 @@
 
 #define HAVE_VISTA_SDK		// VS2010 is already shipped with a Windows 7 SDK
 #define HAVE_WMF_SDK		// WMF SDK is part of the Vista SDK
-#define HAVE_DIRECTX_SDK	// DirectX 9(!) SDK
+//#define HAVE_DIRECTX_SDK	// DirectX 9(!) SDK
 
 // 'sapi.h' is shipped with VS2010 as part of the Windows 7 SDK
 #ifndef HAVE_VISTA_SDK
