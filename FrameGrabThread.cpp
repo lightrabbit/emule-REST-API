@@ -20,11 +20,11 @@
 #include "CxImage/xImage.h"
 #include "OtherFunctions.h"
 #include "quantize.h"
-#ifndef HAVE_QEDIT_H
+#ifdef HAVE_QEDIT_H
 // This is a remote feature and not optional, in order to keep to working properly for other clients who want to use it
 // Check emule_site_config.h to fix it
-#error Missing 'qedit.h', look at "emule_site_config.h" for further information.
-#endif
+//#error Missing 'qedit.h', look at "emule_site_config.h" for further information.
+
 
 // DirectShow MediaDet
 #include <strmif.h>
@@ -263,3 +263,5 @@ void CFrameGrabThread::SetValues(const CKnownFile* in_pOwner, CString in_strFile
 
 BEGIN_MESSAGE_MAP(CFrameGrabThread, CWinThread)
 END_MESSAGE_MAP()
+
+#endif

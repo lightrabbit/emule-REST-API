@@ -2374,12 +2374,16 @@ bool CKnownFile::GrabImage(uint8 nFramesToGrab, double dStartTime, bool bReduceC
 
 bool CKnownFile::GrabImage(CString strFileName,uint8 nFramesToGrab, double dStartTime, bool bReduceColor, uint16 nMaxWidth, void* pSender)
 {
+#ifdef HAVE_QEDIT_H
 	if (!IsMovie())
 		return false;
 	CFrameGrabThread* framegrabthread = (CFrameGrabThread*) AfxBeginThread(RUNTIME_CLASS(CFrameGrabThread), THREAD_PRIORITY_NORMAL,0, CREATE_SUSPENDED);
 	framegrabthread->SetValues(this, strFileName, nFramesToGrab, dStartTime, bReduceColor, nMaxWidth, pSender);
 	framegrabthread->ResumeThread();
 	return true;
+#else
+  return false;
+#endif
 }
 
 // imgResults[i] can be NULL
