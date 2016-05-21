@@ -54,7 +54,7 @@ void CWebSocket::OnRequestReceived(char* pHeader, DWORD dwHeaderLen, char* pData
 		sURL = sURL.Mid(sURL.Find(" ")+1, sURL.GetLength());
 	if(sURL.Find(" ") > -1)
 		sURL = sURL.Left(sURL.Find(" "));
-
+  //TODO: 或许要在这边考虑对.html文件后缀进行支持
 	if (sURL.GetLength()>4 &&	// min length (for valid extentions)
 		(sURL.Right(4).MakeLower()==".gif" || sURL.Right(4).MakeLower()==".jpg" || sURL.Right(4).MakeLower()==".png" ||
 		sURL.Right(4).MakeLower()==".ico" ||sURL.Right(4).MakeLower()==".css" ||sURL.Right(3).MakeLower()==".js" ||

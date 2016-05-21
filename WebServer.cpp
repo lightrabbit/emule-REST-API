@@ -403,6 +403,8 @@ void CWebServer::_ConnectToServer(CString sIP, int nPort)
 
 void CWebServer::ProcessURL(ThreadData Data)
 {
+  //TODO: 在这里尝试支持对Ajax的支持(返回json数据)
+  //可能考虑创建一个新的代码文件来对Ajax进行支持
 	if (theApp.m_app_state!=APP_STATE_RUNNING)
 		return;
 
@@ -6233,7 +6235,7 @@ void CWebServer::ProcessFileReq(ThreadData Data) {
 
 	CString filename=Data.sURL;
 	CString contenttype;
-
+  //TODO: 或许要在这边考虑对.html文件后缀进行支持
 	if (		 filename.Right(4).MakeLower()==_T(".gif")) contenttype=_T("Content-Type: image/gif\r\n");
 		else if (filename.Right(4).MakeLower()==_T(".jpg")  || filename.Right(5).MakeLower()==_T(".jpeg")) contenttype=_T("Content-Type: image/jpg\r\n");
 		else if (filename.Right(4).MakeLower()==_T(".bmp")) contenttype=_T("Content-Type: image/bmp\r\n");
