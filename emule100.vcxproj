@@ -87,6 +87,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug100|Win32'">
     <TargetExt>.debug.exe</TargetExt>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='testversion|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <MASM>
       <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
@@ -102,7 +104,7 @@
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>..\site_config;.;..;..\id3lib\include;upnplib\ixml\src\inc;upnplib\upnp\src\inc;upnplib\upnp\inc;upnplib\build\inc;upnplib\threadutil\inc;upnplib\ixml\inc;pthreads\pthreads\inc;DirectX\Include;DirectX\Extras\DirectShow\Include;ATLServer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\site_config;.;..;..\id3lib\include;upnplib\ixml\src\inc;upnplib\upnp\src\inc;upnplib\upnp\inc;upnplib\build\inc;upnplib\threadutil\inc;upnplib\ixml\inc;pthreads\pthreads\inc;DirectX\Include;DirectX\Extras\DirectShow\Include;ATLServer\include;rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_ALLOW_KEYWORD_MACROS;WIN32;_WINDOWS;NDEBUG;ID3LIB_LINKOPTION=1;_RELEASE;SUPPORT_LARGE_FILES;UPNP_STATIC_LIB;_WIN32;PTW32_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -165,7 +167,7 @@
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>..\site_config;.;..;..\id3lib\include;upnplib\ixml\src\inc;upnplib\upnp\src\inc;upnplib\upnp\inc;upnplib\build\inc;upnplib\threadutil\inc;upnplib\ixml\inc;pthreads\pthreads\inc;DirectX\Include;DirectX\Extras\DirectShow\Include;ATLServer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\site_config;.;..;..\id3lib\include;upnplib\ixml\src\inc;upnplib\upnp\src\inc;upnplib\upnp\inc;upnplib\build\inc;upnplib\threadutil\inc;upnplib\ixml\inc;pthreads\pthreads\inc;DirectX\Include;DirectX\Extras\DirectShow\Include;ATLServer\include;rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;ID3LIB_LINKOPTION=1;_BETA;SUPPORT_LARGE_FILES;PRINT_STATISTIC;UPNP_STATIC_LIB;_WIN32;PTW32_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -223,7 +225,7 @@ del $(IntDir)emule.obj
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\site_config;.;..;..\id3lib\include;upnplib\ixml\src\inc;upnplib\upnp\src\inc;upnplib\upnp\inc;upnplib\build\inc;upnplib\threadutil\inc;upnplib\ixml\inc;pthreads\pthreads\inc;DirectX\Include;DirectX\Extras\DirectShow\Include;ATLServer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\site_config;.;..;..\id3lib\include;upnplib\ixml\src\inc;upnplib\upnp\src\inc;upnplib\upnp\inc;upnplib\build\inc;upnplib\threadutil\inc;upnplib\ixml\inc;pthreads\pthreads\inc;DirectX\Include;DirectX\Extras\DirectShow\Include;ATLServer\include;rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;ID3LIB_LINKOPTION=1;SUPPORT_LARGE_FILES;UPNP_STATIC_LIB;_WIN32;PTW32_STATIC_LIB;PNG_DEBUG=1;PNG_USE_PNGVCRD;PNG_LIBPNG_SPECIALBUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
