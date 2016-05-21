@@ -718,7 +718,7 @@ bool CKnownFile::CreateFromFile(LPCTSTR in_directory, LPCTSTR in_filename, LPVOI
 
 	// set lastwrite date
 	struct _stat fileinfo;
-	if (_fstat(file->_file, &fileinfo) == 0){
+	if (_fstat(_fileno(file), &fileinfo) == 0){
 		// ==> Make code VS 2005 and VS 2008 ready [MorphXT] - Stulle
 		/*
 		m_tUtcLastModified = fileinfo.st_mtime;

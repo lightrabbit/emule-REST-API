@@ -172,6 +172,12 @@
 
 #endif//_MSC_VER>=1400
 
+#if _MSC_VER>=1900
+#ifndef HAVE_STRUCT_TIMESPEC
+#define HAVE_STRUCT_TIMESPEC 1
+#endif
+#endif
+
 #ifdef _DEBUG
 #define _ATL_DEBUG
 #define _ATL_DEBUG_QI

@@ -495,7 +495,7 @@ CemuleApp theApp(_T("eMule"));
 /*
 #if _MFC_VER==0x0700 || _MFC_VER==0x0710 || _MFC_VER==0x0800 || _MFC_VER==0x0900
 */
-#if _MFC_VER==0x0700 || _MFC_VER==0x0710 || _MFC_VER==0x0800 || _MFC_VER==0x0900 || _MFC_VER==0x0A00 || _MFC_VER==0x0B00 || _MFC_VER==0x0C00
+#if _MFC_VER==0x0700 || _MFC_VER==0x0710 || _MFC_VER==0x0800 || _MFC_VER==0x0900 || _MFC_VER==0x0A00 || _MFC_VER==0x0B00 || _MFC_VER==0x0C00 || _MFC_VER==0x0E00
 // <== Visual Studio 2010 Compatibility [Stulle/Avi-3k/ied] - Stulle
 void __cdecl __AfxSocketTerm()
 {
@@ -710,7 +710,7 @@ BOOL CemuleApp::InitInstance()
 /*
 #if _MFC_VER==0x0700 || _MFC_VER==0x0710 || _MFC_VER==0x0800 || _MFC_VER==0x0900
 */
-#if _MFC_VER==0x0700 || _MFC_VER==0x0710 || _MFC_VER==0x0800 || _MFC_VER==0x0900 || _MFC_VER==0x0A00 || _MFC_VER==0x0B00 || _MFC_VER==0x0C00
+#if _MFC_VER==0x0700 || _MFC_VER==0x0710 || _MFC_VER==0x0800 || _MFC_VER==0x0900 || _MFC_VER==0x0A00 || _MFC_VER==0x0B00 || _MFC_VER==0x0C00 || _MFC_VER==0x0E00
 // <== Visual Studio 2010 Compatibility [Stulle/Avi-3k/ied] - Stulle
 	atexit(__AfxSocketTerm);
 #else
