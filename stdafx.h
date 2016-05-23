@@ -292,6 +292,16 @@
 #define _expand(p, s)	  _expand_dbg(p, s, _NORMAL_BLOCK, __FILE__, __LINE__)
 #define free(p)			  _free_dbg(p, _NORMAL_BLOCK)
 #define _msize(p)		  _msize_dbg(p, _NORMAL_BLOCK)
+//对std的带debug函数进行兼容
+namespace std
+{
+  using ::_malloc_dbg;
+  using ::_calloc_dbg;
+  using ::_realloc_dbg;
+  using ::_expand_dbg;
+  using ::_free_dbg;
+  using ::_msize_dbg;
+}
 #endif
 
 typedef CArray<CStringA> CStringAArray;
