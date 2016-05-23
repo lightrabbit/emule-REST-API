@@ -45,6 +45,7 @@
 #include "PPgWebserver.h"
 CRBMap<uint32, WebServDef>	CWebServer::AdvLogins; //unlimited logs
 // <== Ionix advanced (multiuser) webserver [iOniX/Aireoreion/wizard/leuk_he/Stulle] - Stulle
+#include "WebServerRESTAPI.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -422,6 +423,13 @@ void CWebServer::ProcessURL(ThreadData Data)
 	//////////////////////////////////////////////////////////////////////////
 	CoInitialize(NULL);
 
+  //从这里开始处理REST API请求
+  if (Data.sURL.Left(6) == _T("/rest/")) {
+    WebServerRESTAPI::Process(Data);
+
+    CoUninitialize();
+    return;
+  }
 #ifndef _DEBUG
 	try{
 #endif	

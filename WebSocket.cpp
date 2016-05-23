@@ -31,6 +31,12 @@ void CWebSocket::SetParent(CWebServer *pParent)
 
 void CWebSocket::OnRequestReceived(char* pHeader, DWORD dwHeaderLen, char* pData, DWORD dwDataLen, in_addr inad)
 {
+  //TODO: 这里可能要加上相对完整的处理器支持
+  //      包括:
+  //      1.对Header中所有项的获取
+  //      2.对Method的支持
+  //      3.单独处理data部分而不是放在sURL中
+  //          对遗留代码的兼容在WebServer::ProcessURL中处理
 	CStringA sHeader(pHeader, dwHeaderLen);
 	CStringA sData(pData, dwDataLen);
 	CStringA sURL;

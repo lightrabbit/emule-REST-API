@@ -86,9 +86,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug100|Win32'">
     <TargetExt>.debug.exe</TargetExt>
+    <IncludePath>$(ProjectDir)rapidjson\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='testversion|Win32'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='testversion|Win32'">
+    <IncludePath>$(ProjectDir)rapidjson\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(ProjectDir)rapidjson\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <MASM>
       <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
@@ -238,6 +243,7 @@ del $(IntDir)emule.obj
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -267,6 +273,9 @@ del $(IntDir)emule.obj
       <Command>
       </Command>
     </PostBuildEvent>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AbstractFile.cpp" />
@@ -388,6 +397,7 @@ del $(IntDir)emule.obj
     <ClCompile Include="UPnP_IGDControlPoint.cpp" />
     <ClCompile Include="URLClient.cpp" />
     <ClCompile Include="Version.cpp" />
+    <ClCompile Include="WebServerRESTAPI.cpp" />
     <ClCompile Include="WebSocket.cpp" />
     <ClCompile Include="ZIPFile.cpp" />
     <ClCompile Include="kademlia\io\BufferedFileIO.cpp" />
@@ -1061,6 +1071,7 @@ del $(IntDir)emule.obj
     <ClInclude Include="URLClient.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="VistaDefines.h" />
+    <ClInclude Include="WebServerRESTAPI.h" />
     <ClInclude Include="WebServices.h" />
     <ClInclude Include="WebSocket.h" />
     <ClInclude Include="ZIPFile.h" />

@@ -912,6 +912,9 @@
     <ClCompile Include="MiniMule\tbhmm.cpp">
       <Filter>MiniMule</Filter>
     </ClCompile>
+    <ClCompile Include="WebServerRESTAPI.cpp">
+      <Filter>Interface Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="MD4_asm.asm">
@@ -2888,6 +2891,9 @@
     </ClInclude>
     <ClInclude Include="kademlia\utils\KadClientSearcher.h">
       <Filter>Header Files\Kademlia</Filter>
+    </ClInclude>
+    <ClInclude Include="WebServerRESTAPI.h">
+      <Filter>Interface Header</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
