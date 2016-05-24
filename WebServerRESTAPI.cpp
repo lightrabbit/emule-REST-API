@@ -38,6 +38,15 @@
 #include "UserMsgs.h"
 
 #include "WebServerRESTAPI.h"
+#include "SafeFile.h"
+#include "Kademlia/Utils/KadClientSearcher.h"
+#include <io.h>
+#include "Friend.h"
+#include "emuledlg.h"
+#include "FriendListCtrl.h"
+#include "Packets.h"
+#include "clientlist.h"
+
 
 #include <iostream>
 #include "rapidjson/reader.h"
@@ -58,7 +67,7 @@ typedef Writer<StringBufferT, UTF8<>, UTF8<>> WriterT;
 #endif
 //或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
 static const TCHAR* JSONInit = _T("Server: eMule\r\nConnection: close\r\nContent-Type: application/json\r\n");
-
+//WriteObject应该读取那些种类的数据？
 static void WriteObject(WriterT& writer, CServer* server) 
 {
   writer.StartObject();
@@ -66,9 +75,9 @@ static void WriteObject(WriterT& writer, CServer* server)
   writer.Key(_T("address")); writer.String(server->GetAddress());//ip改为address By 柚子
   writer.Key(_T("port")); writer.Uint(server->GetPort());
   writer.Key(_T("description")); writer.String(server->GetDescription());
-  //TODO: 还有十几个属性没加进来
+  //TODO: 还有十几个属性没加进来	--已添加 ，重复项已删除 By Yuzu
 
-  //Notice:以下是新手柚子锁写，请不要相信哪怕一个字符
+  //Notice:以下是新手柚子所写，请不要相信哪怕一个字符
   //所有CServer提供的属性均已添加 @ 2016-5-24 01：03
   //似乎有部分属性是重复的，可以去掉（例如多种多样的IP属性）
 
@@ -94,8 +103,6 @@ static void WriteObject(WriterT& writer, CServer* server)
   writer.Key(_T("users")); writer.Uint(server->GetUsers());
   writer.Key(_T("preference")); writer.Uint(server->GetIP());
   writer.Key(_T("ping")); writer.Uint(server->GetPing());
-  writer.Key(_T("maxUsers")); writer.Uint(server->GetMaxUsers());
-  writer.Key(_T("failedCount")); writer.Uint(server->GetFailedCount());
   writer.Key(_T("maxUsers")); writer.Uint(server->GetMaxUsers());
   writer.Key(_T("failedCount")); writer.Uint(server->GetFailedCount());
   writer.Key(_T("lastPingedTime")); writer.Uint(server->GetLastPingedTime());
@@ -125,11 +132,71 @@ static void WriteObject(WriterT& writer, CServer* server)
   writer.Key(_T("isSupportsGetSourcesObfuscation")); writer.Bool(server->SupportsGetSourcesObfuscation());
   //修改了部分布尔变量的key名，使其更加一致
   //同时我也看出来eMule的代码是如何坑爹的@ 2016-5-24 01：03
+  writer.EndObject();
+}
 
-  //以上
+//我正在尝试写一个返回好友的函数，因为好友列表所需要返回的数据相对独立
+//我忽然想到 WriteObiect的函数名或许有歧义，
+//可能与前端操作对象（比如增加好友）的函数名重复？@ 2016-5-24 3：00
+//CFriend类的风格与CServer类的风格有一定差异，需要注意一下。
+CString ArrayToHex(const uchar* str, int len=0)//总感觉我的理解错了@20：24
+{                                              //不知为何，我总觉得会十分搞笑
+  char T16[] = "0123456789ABCDEF",tmp[256],*ptr;
+  ptr = tmp;
+  if (len == 0) {
+	  while (*ptr++)len++;
+	  ptr = tmp;
+  }
+  if (len > 127)return _T("Too Large!");
+  while (len--) {
+	  *ptr = T16[*str / 16];ptr++;
+	  *ptr = T16[*str % 16];ptr++;
+	  str++;
+  }
+  *ptr ='\0';
+  return CString( tmp );
+}
+//TODO:完成CUpDownClient类型的返回
+static void WriteObject(WriterT& writer, CUpDownClient* client, bool index=false)
+{ //我注意到CUpDownClient类中有GetFriend()方法返回CFriend类 
+  //CFriend类中有GetLinkedClient()方法返回CUpDownClient类
+  //如何才能避免无限递归？
+  //一个可行的方法是，所有WriteObject中调用的WriteObject方法，只返回索引信息，不返回详细信息
+
+  writer.StartObject();
+  if (index) {
+	writer.Key(_T("userHash")); writer.String(ArrayToHex(client->GetUserHash()));//uchar[16]
+
+  }
+  else {
+	  writer.Key(_T("Client")); writer.String(_T("NotSupportted"));
+  }
+  writer.EndObject();
+}
+
+static void WriteObject(WriterT& writer,CFriend* pail)//因为friend是关键字，这里用pail 
+{
+  CUpDownClient* Client;
+  Client = pail->GetLinkedClient();
+
+  writer.StartObject();
+  writer.Key(_T("userHash")); writer.String(ArrayToHex(pail->m_abyUserhash,16));//uchar[16]
+  writer.Key(_T("lastSeen")); writer.Int64(pail->m_dwLastSeen);//有可能是64位时间
+  writer.Key(_T("lastUsedIP")); writer.Int(pail->m_dwLastUsedIP);
+  writer.Key(_T("lastUsedPort")); writer.Int(pail->m_nLastUsedPort);
+  writer.Key(_T("lastChatted")); writer.Int(pail->m_dwLastChatted);
+  writer.Key(_T("name")); writer.String(pail->m_strName);
+  //TODO:讨论GetLinkedClient();的发送格式并实现	--准备进行
+  WriteObject(writer, Client);
+  //以及GetClientForChatSession();的功能及实现
+  writer.Key(_T("isTryToConnet")); writer.Bool(pail->IsTryingToConnect());
+  writer.Key(_T("isFriendSlotted")); writer.Bool(pail->GetFriendSlot());
+  writer.Key(_T("hasUserHash")); writer.Bool(pail->HasUserhash());
+  writer.Key(_T("hasKadID")); writer.Bool(pail->HasKadID());
 
   writer.EndObject();
 }
+//以上
 
 CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
 {
@@ -164,7 +231,7 @@ WebServerRESTAPI::~WebServerRESTAPI()
 void WebServerRESTAPI::Process(ThreadData Data)
 {
   CWebSocket *pSocket = Data.pSocket;
-  int iStart = 6;
+  int iStart = 6;	//Magic number？？
   CString sService = Data.sURL.Tokenize(_T("/"), iStart);
   CString sParam = Data.sURL.Mid(iStart);
   //TODO: 在这里增加共享文件,下载文件,上传队列,下载队列等处理,用if...else if...else的形式
