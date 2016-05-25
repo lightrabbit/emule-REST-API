@@ -94,14 +94,15 @@ static void WriteObject(WriterT& writer, CServer* server)
   //将显式类型转换至writer支持的类型
   //int被认为是int32 @ 23：47
   //显式类型转换时，报错，将采用隐式类型转换
-  writer.Key(_T("IP"));	writer.Uint(server->GetIP());
-
   writer.Key(_T("dynIP")); writer.String(server->GetDynIP());
+  writer.Key(_T("IP"));	writer.Uint(server->GetIP());
+  writer.Key(_T("dynIP")); writer.String(server->GetDynIP());
+  writer.Key(_T("hasDynIP")); writer.Bool(server->HasDynIP);
   writer.Key(_T("fullIP")); writer.String(server->GetFullIP());
-  writer.Key(_T("port")); writer.Uint((uint32)(server->GetPort()));
+  writer.Key(_T("port")); writer.Uint(server->GetPort());
   writer.Key(_T("files")); writer.Uint(server->GetFiles());
   writer.Key(_T("users")); writer.Uint(server->GetUsers());
-  writer.Key(_T("preference")); writer.Uint(server->GetIP());
+  writer.Key(_T("preference")); writer.Uint(server->GetPreference());
   writer.Key(_T("ping")); writer.Uint(server->GetPing());
   writer.Key(_T("maxUsers")); writer.Uint(server->GetMaxUsers());
   writer.Key(_T("failedCount")); writer.Uint(server->GetFailedCount());
@@ -132,6 +133,8 @@ static void WriteObject(WriterT& writer, CServer* server)
   writer.Key(_T("isSupportsGetSourcesObfuscation")); writer.Bool(server->SupportsGetSourcesObfuscation());
   //修改了部分布尔变量的key名，使其更加一致
   //同时我也看出来eMule的代码是如何坑爹的@ 2016-5-24 01：03
+  //对比CServer类检查了上面属性的完整性--已完成@ 2016-5-25 10：10
+  //再次删除了重复项。
   writer.EndObject();
 }
 
