@@ -58,6 +58,7 @@ dlldata.c
 *.pidb
 *.svclog
 *.scc
+*.bsc
 
 # Chutzpah Test files
 _Chutzpah*
@@ -195,3 +196,7 @@ ModelManifest.xml
 debug100/
 debug100/*
 release/
+
+#debug info files
+IUpnpErrFile.txt
+IUpnpInfoFile.txt
