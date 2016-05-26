@@ -173,7 +173,7 @@ static void WriteObject(WriterT& writer, CFriend* pail)//ÒòÎªfriendÊÇ¹Ø¼ü×Ö£¬ÕâÀ
 	Client = pail->GetLinkedClient();
 
 	writer.StartObject();
-	writer.Key(_T("userHash")); writer.String(CString(pail->m_abyUserhash, 16));//uchar[16]
+	writer.Key(_T("userHash")); writer.String(CString(pail->m_abyUserhash));//uchar[16]
 	writer.Key(_T("lastSeen")); writer.Int64(pail->m_dwLastSeen);//ÓÐ¿ÉÄÜÊÇ64Î»Ê±¼ä
 	writer.Key(_T("lastUsedIP")); writer.Int(pail->m_dwLastUsedIP);
 	writer.Key(_T("lastUsedPort")); writer.Int(pail->m_nLastUsedPort);
