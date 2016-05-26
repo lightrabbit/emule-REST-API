@@ -196,3 +196,7 @@ ModelManifest.xml
 debug100/
 debug100/*
 release/
+
+#debug info files
+IUpnpErrFile.txt
+IUpnpInfoFile.txt
