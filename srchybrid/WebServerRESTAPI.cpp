@@ -216,7 +216,77 @@ static void WriteObject(WriterT& writer, CShareableFile* file, unsigned char ind
 	if (!index)writer.EndObject();
 }
 
-//用typeid(类型)区分类型，但还需测试
+static void WriteObject(WriterT& writer, CKnownFile* file, unsigned char index = 0) {
+	if (!index)writer.StartObject();
+	WriteObject(writer, (CShareableFile*)file, index + 1);
+	//WriteObject(writer,file->GetUtcCFileDate);
+	writer.Key(_T("utcFileDate")); writer.Int(file->GetUtcFileDate());
+	writer.Key(_T("isShouldPartiallyPurgeFile")); writer.Bool(file->ShouldPartiallyPurgeFile());
+	writer.Key(_T("partCount")); writer.Int(file->GetPartCount());
+	writer.Key(_T("eD2KPartCount")); writer.Int(file->GetED2KPartCount());
+	writer.Key(_T("upPriority")); writer.Int(file->GetUpPriority());
+	writer.Key(_T("upPriorityEx")); writer.Int(file->GetUpPriorityEx());
+	writer.Key(_T("isAutoUpPriority")); writer.Bool(file->IsAutoUpPriority());
+	writer.Key(_T("calculateUploadPriorityPercent")); writer.Double(file->CalculateUploadPriorityPercent());
+	writer.Key(_T("wantedUpload")); writer.Int64(file->GetWantedUpload());
+	writer.Key(_T("pushfaktor")); writer.Double(file->pushfaktor);
+	writer.Key(_T("virtualUploadSources")); writer.Int(file->m_nVirtualUploadSources);
+	writer.Key(_T("virtualSourceIndicator")); writer.Int(file->GetVirtualSourceIndicator());
+	writer.Key(_T("virtualCompleteSourcesCount")); writer.Int(file->m_nVirtualCompleteSourcesCount);
+	writer.Key(_T("getOnUploadqueue")); writer.Int(file->GetOnUploadqueue());
+	writer.Key(_T("isPublishedED2K")); writer.Bool(file->GetPublishedED2K());
+	writer.Key(_T("kadFileSearchID")); writer.Int(file->GetKadFileSearchID());
+	//WriteObject(writer,file->GetKadKeywords())	//TODO: WriteObjects for Kademlia::WordList
+	writer.Key(_T("lastPublishTimeKadSrc")); writer.Int(file->GetLastPublishTimeKadSrc());
+	writer.Key(_T("lastPublishBuddy")); writer.Int(file->GetLastPublishBuddy());
+	writer.Key(_T("lastPublishTimeKadNotes")); writer.Int(file->GetLastPublishTimeKadNotes());
+	writer.Key(_T("hasPublishSrc")); writer.Bool(file->PublishSrc());
+	writer.Key(_T("hasPublishNotes")); writer.Int(file->PublishNotes());
+	writer.Key(_T("metaDataVer")); writer.Int(file->GetMetaDataVer());
+	writer.Key(_T("isMovie")); writer.Bool(file->IsMovie());
+	writer.Key(_T("infoSummary")); writer.String(file->GetInfoSummary());
+	writer.Key(_T("upPriorityDisplayString")); writer.String(file->GetUpPriorityDisplayString());
+	writer.Key(_T("isAICHRecoverHashSetAvailable")); writer.Bool(file->IsAICHRecoverHashSetAvailable());
+	writer.Key(_T("utcLastModified")); writer.Int(file->m_tUtcLastModified);
+	//WriteObject(writer,file->statistic)	//TODO: WriteObjects for CStatisticFile
+	writer.Key(_T("completeSourcesTime")); writer.Int(file->m_nCompleteSourcesTime);
+	writer.Key(_T("completeSourcesCount")); writer.Int(file->m_nCompleteSourcesCount);
+	writer.Key(_T("completeSourcesCountLo")); writer.Int(file->m_nCompleteSourcesCountLo);
+	writer.Key(_T("completeSourcesCountHi")); writer.Int(file->m_nCompleteSourcesCountHi);
+	//WriteObject(writer,file->m_ClientUploadList)//TODO: WriterObject for CUpDownClientPtrList
+	//WriteObject(writer,file->m_AvailPartFrequency)//TODO: WriteObject for CArray<uint16, uint16> 
+	//WriteObject(writer,file->m_pCollection)//TODO: WriteObject for CCollection*
+	writer.Key(_T("isSR13_ImportParts")); writer.Bool(file->SR13_ImportParts());
+	writer.Key(_T("startUploadTime")); writer.Int(file->GetStartUploadTime());
+	writer.Key(_T("fileRatio")); writer.Double(file->GetFileRatio());
+	writer.Key(_T("isPushSmallFile")); writer.Bool(file->IsPushSmallFile());
+	writer.Key(_T("feedback")); writer.String(file->GetFeedback());
+	//WriteObject(writer,file->m_PartSentCount)//TODO: WriteObject for CArray<uint64> 
+	writer.Key(_T("hideOS")); writer.Int(file->GetHideOS());
+	writer.Key(_T("selectiveChunk")); writer.Int(file->GetSelectiveChunk());
+	writer.Key(_T("hideOSInWork")); writer.Int(file->HideOSInWork());
+	writer.Key(_T("shareOnlyTheNeed")); writer.Int(file->GetShareOnlyTheNeed());
+	writer.Key(_T("sotnInWork")); writer.Int(file->SotnInWork());
+	writer.Key(_T("powerSharedMode")); writer.Int(file->GetPowerSharedMode());
+	writer.Key(_T("ispowerShareAuthorized")); writer.Bool(file->GetPowerShareAuthorized());
+	writer.Key(_T("ispowerShareAuto")); writer.Bool(file->GetPowerShareAuto());
+	writer.Key(_T("powerShareLimit")); writer.Int(file->GetPowerShareLimit());
+	writer.Key(_T("ispowerShareLimited")); writer.Bool(file->GetPowerShareLimited());
+	writer.Key(_T("ispowerShared")); writer.Bool(file->GetPowerShared());
+	writer.Key(_T("knownStyle")); writer.Int(file->GetKnownStyle());
+	writer.Key(_T("psAmountLimit")); writer.Int(file->GetPsAmountLimit());
+	if (!index)writer.EndObject();
+}
+static void WriteObject(WriterT& writer, CPartFile* file, unsigned char index = 0) {
+	if (!index)writer.StartObject();
+	WriteObject(writer, (CKnownFile*)file, index + 1);
+	writer.Key(_T("")); writer.Int(file->());
+
+
+	if (!index)writer.EndObject();
+}
+
+
 //以上
 
 CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
