@@ -68,6 +68,9 @@ typedef Writer<StringBufferT, UTF8<>, UTF8<>> WriterT;
 //»òĞíĞèÒªÔö¼ÓemuleµÄ°æ±¾£¿²¢ÏñÓÎÀÀÆ÷Ò»ÑùÌá¹©²Ù×÷ÏµÍ³µÈµÄĞÅÏ¢£¿ By èÖ×Ó
 static const TCHAR* JSONInit = _T("Server: eMule\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\n");
 //WriteObjectÓ¦¸Ã¶ÁÈ¡ÄÇĞ©ÖÖÀàµÄÊı¾İ£¿
+//TODO: Doing-²ÉÓÃºê´¦ÀíÅúÁ¿µÄwrite.Key¼°ºóÃæµÄÓï¾ä
+
+
 static void WriteObject(WriterT& writer, CServer* server)
 {
 	writer.StartObject();
@@ -84,10 +87,8 @@ static void WriteObject(WriterT& writer, CServer* server)
 	//ÃüÃû¹æÔò£ºGetXXX->XXX;HasXXX->hasXXX;BoolµÄÔÚÇ°Ãæ²¹³äis	@23£º21
 	writer.Key(_T("dynIP")); writer.String(server->GetDynIP());
 	writer.Key(_T("IP"));	writer.Uint(server->GetIP());
-	writer.Key(_T("dynIP")); writer.String(server->GetDynIP());
 	writer.Key(_T("hasDynIP")); writer.Bool(server->HasDynIP());
 	writer.Key(_T("fullIP")); writer.String(server->GetFullIP());
-	writer.Key(_T("port")); writer.Uint(server->GetPort());
 	writer.Key(_T("files")); writer.Uint(server->GetFiles());
 	writer.Key(_T("users")); writer.Uint(server->GetUsers());
 	writer.Key(_T("preference")); writer.Uint(server->GetPreference());
@@ -131,25 +132,10 @@ static void WriteObject(WriterT& writer, CServer* server)
 //ÎÒºöÈ»Ïëµ½ WriteObiectµÄº¯ÊıÃû»òĞíÓĞÆçÒå£¬
 //¿ÉÄÜÓëÇ°¶Ë²Ù×÷¶ÔÏó£¨±ÈÈçÔö¼ÓºÃÓÑ£©µÄº¯ÊıÃûÖØ¸´£¿@ 2016-5-24 3£º00
 //CFriendÀàµÄ·ç¸ñÓëCServerÀàµÄ·ç¸ñÓĞÒ»¶¨²îÒì£¬ĞèÒª×¢ÒâÒ»ÏÂ¡£
-CString ArrayToHex(const uchar* str, int len = 0)//×Ü¸Ğ¾õÎÒµÄÀí½â´íÁË@20£º24
-{                                              //²»ÖªÎªºÎ£¬ÎÒ×Ü¾õµÃ»áÊ®·Ö¸ãĞ¦
-	char T16[] = "0123456789ABCDEF", tmp[256], *ptr;
-	ptr = tmp;
-	if (len == 0) {
-		while (*ptr++)len++;
-		ptr = tmp;
-	}
-	if (len > 127)return _T("Too Large!");
-	while (len--) {
-		*ptr = T16[*str / 16]; ptr++;
-		*ptr = T16[*str % 16]; ptr++;
-		str++;
-	}
-	*ptr = '\0';
-	return CString(tmp);
-}
+
 //TODO:Íê³ÉCUpDownClientÀàĞÍµÄ·µ»Ø
-static void WriteObject(WriterT& writer, CUpDownClient* client, bool index = false)
+//list=CClientList
+static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char index = 0)
 { //ÎÒ×¢Òâµ½CUpDownClientÀàÖĞÓĞGetFriend()·½·¨·µ»ØCFriendÀà 
   //CFriendÀàÖĞÓĞGetLinkedClient()·½·¨·µ»ØCUpDownClientÀà
   //ÈçºÎ²ÅÄÜ±ÜÃâÎŞÏŞµİ¹é£¿
@@ -157,7 +143,7 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, bool index = fal
 
 
 	if (index) {
-		writer.Key(_T("clientUserHash")); writer.String(ArrayToHex(client->GetUserHash()));//uchar[16]
+		writer.Key(_T("clientUserHash")); writer.String(CString(client->GetUserHash()));//uchar[16]
 	}
 	else {
 		writer.StartObject();
@@ -180,7 +166,7 @@ static void WriteObject(WriterT& writer, CFriend* pail)//ÒòÎªfriendÊÇ¹Ø¼ü×Ö£¬ÕâÀ
 	writer.Key(_T("lastChatted")); writer.Int(pail->m_dwLastChatted);
 	writer.Key(_T("name")); writer.String(pail->m_strName);
 	//TODO:ÌÖÂÛGetLinkedClient();µÄ·¢ËÍ¸ñÊ½²¢ÊµÏÖ	--×¼±¸½øĞĞ
-	WriteObject(writer, Client);
+	WriteObject(writer, Client);//TODO: WriteObject for CUpDownClient
 	//ÒÔ¼°GetClientForChatSession();µÄ¹¦ÄÜ¼°ÊµÏÖ
 	writer.Key(_T("isTryToConnet")); writer.Bool(pail->IsTryingToConnect());
 	writer.Key(_T("isFriendSlotted")); writer.Bool(pail->GetFriendSlot());
@@ -192,6 +178,43 @@ static void WriteObject(WriterT& writer, CFriend* pail)//ÒòÎªfriendÊÇ¹Ø¼ü×Ö£¬ÕâÀ
 //ËÆºõ·µ»ØCFriendÊÇÍêÈ«Ã»ÓĞ±ØÒªµÄ£¿·µ»ØCUpDownClientÀà¾ÍºÃÁË
 //ÀïÃæÒ²ÓĞisFriend·½·¨£¬Èç¹ûĞèÒª·µ»ØËùÓĞFriend£¬Í¨¹ı²éÑ¯ËùÓĞ
 //isFriend()=TureµÄClient¾ÍºÃ
+
+
+static void WriteObject(WriterT& writer, CAbstractFile* file, unsigned char index = 0 ) {
+    writer.StartObject();
+	writer.Key(_T("fileName")); writer.String(file->GetFileName());
+	writer.Key(_T("fileType")); writer.String(file->GetFileType());
+	writer.Key(_T("fileTypeDisplayName")); writer.String(file->GetFileTypeDisplayStr());
+	//WriteObject(writer,file->GetFileIdentifier());	//TODO: WriteObject for CFileIdentifier
+	writer.Key(_T("fileHash")); writer.String(CString(file->GetFileHash()));
+	writer.Key(_T("hasHashSet")); writer.Bool(file->HasNullHash());
+	writer.Key(_T("eD2kLink")); writer.String(file->GetED2kLink());//without Hashset;HTMLTag;HostName;Source;dwSourceIP
+	//WriteObject(writer,file->GetFileSize());	//TODO: WriteObject for EMFileSize
+	writer.Key(_T("isLargeFile")); writer.Bool(file->IsLargeFile());
+	writer.Key(_T("isPartfile")); writer.Bool(file->IsPartFile());
+	writer.Key(_T("hasComment")); writer.Bool(file->HasComment());
+	writer.Key(_T("userRating")); writer.Int(file->UserRating());
+	writer.Key(_T("hasUserRating")); writer.Bool(file->HasRating());
+	writer.Key(_T("hasBadRating")); writer.Bool(file->HasBadRating());
+	writer.Key(_T("fileComment")); writer.String(file->GetFileComment());
+	writer.Key(_T("fileRating")); writer.Int(file->GetFileRating());
+	//WriteObject(writer, file->getNotes());	//TODO:WriteObject for CKadEntryPtrList
+	writer.Key(_T("isKadCommentSearchRunning")); writer.Bool(file->IsKadCommentSearchRunning());
+	writer.Key(_T("isCompressible")); writer.Bool(file->IsCompressible());
+	writer.EndObject();
+}
+static void WriteObject(WriterT& writer, CShareableFile* file, unsigned char index = 0) {
+	WriteObject(writer, (CAbstractFile*)file, index);
+	//WriteObject(writer,file->GetVerifiedFileType());	//TODO:WriteObject for EFileType
+	writer.Key(_T("isPartfile")); writer.Bool(file->IsPartFile());
+	writer.Key(_T("path")); writer.String(file->GetPath());
+	writer.Key(_T("sharedDirectory")); writer.String(file->GetSharedDirectory());
+	writer.Key(_T("isShellLinked")); writer.Bool(file->IsShellLinked());
+	writer.Key(_T("filePath")); writer.String(file->GetFilePath());
+	writer.Key(_T("infoSummary")); writer.String(file->GetInfoSummary());
+}
+
+//ÓÃtypeid(ÀàĞÍ)Çø·ÖÀàĞÍ£¬µ«»¹Ğè²âÊÔ
 //ÒÔÉÏ
 
 CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
