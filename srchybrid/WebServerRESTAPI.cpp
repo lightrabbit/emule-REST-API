@@ -181,7 +181,7 @@ static void WriteObject(WriterT& writer, CFriend* pail)//ÒòÎªfriendÊÇ¹Ø¼ü×Ö£¬ÕâÀ
 
 
 static void WriteObject(WriterT& writer, CAbstractFile* file, unsigned char index = 0 ) {
-    writer.StartObject();
+    if (!index)writer.StartObject();
 	writer.Key(_T("fileName")); writer.String(file->GetFileName());
 	writer.Key(_T("fileType")); writer.String(file->GetFileType());
 	writer.Key(_T("fileTypeDisplayName")); writer.String(file->GetFileTypeDisplayStr());
@@ -201,10 +201,11 @@ static void WriteObject(WriterT& writer, CAbstractFile* file, unsigned char inde
 	//WriteObject(writer, file->getNotes());	//TODO:WriteObject for CKadEntryPtrList
 	writer.Key(_T("isKadCommentSearchRunning")); writer.Bool(file->IsKadCommentSearchRunning());
 	writer.Key(_T("isCompressible")); writer.Bool(file->IsCompressible());
-	writer.EndObject();
+	if (!index)writer.EndObject();
 }
 static void WriteObject(WriterT& writer, CShareableFile* file, unsigned char index = 0) {
-	WriteObject(writer, (CAbstractFile*)file, index);
+	if (!index)writer.StartObject();
+	WriteObject(writer, (CAbstractFile*)file, index+1);
 	//WriteObject(writer,file->GetVerifiedFileType());	//TODO:WriteObject for EFileType
 	writer.Key(_T("isPartfile")); writer.Bool(file->IsPartFile());
 	writer.Key(_T("path")); writer.String(file->GetPath());
@@ -212,6 +213,7 @@ static void WriteObject(WriterT& writer, CShareableFile* file, unsigned char ind
 	writer.Key(_T("isShellLinked")); writer.Bool(file->IsShellLinked());
 	writer.Key(_T("filePath")); writer.String(file->GetFilePath());
 	writer.Key(_T("infoSummary")); writer.String(file->GetInfoSummary());
+	if (!index)writer.EndObject();
 }
 
 //ÓÃtypeid(ÀàĞÍ)Çø·ÖÀàĞÍ£¬µ«»¹Ğè²âÊÔ
