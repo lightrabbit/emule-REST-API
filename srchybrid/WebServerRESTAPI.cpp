@@ -277,12 +277,27 @@ static void WriteObject(WriterT& writer, CKnownFile* file, unsigned char index =
 	writer.Key(_T("psAmountLimit")); writer.Int(file->GetPsAmountLimit());
 	if (!index)writer.EndObject();
 }
+static void WriteObject(WriterT& writer, CAICHHash* hash, unsigned char index = 0) {
+	//writer.StartObject();
+	writer.String(hash->GetString());
+	//writer.EndObject();
+}
+static void WriteObject(WriterT& writer, CAICHHashTree* hash, unsigned char index = 0) {
+	//writer.StartObject();
+	WriteObject(writer, &(hash->m_Hash));
+	//writer.EndObject();
+}
+static void WriteObject(WriterT& writer, CAICHRecoveryHashSet* hash, unsigned char index = 0) {
+	//writer.StartObject();
+	WriteObject(writer, &(hash->m_pHashTree));
+	//writer.EndObject();
+}
 static void WriteObject(WriterT& writer, CPartFile* file, unsigned char index = 0) {
 	if (!index)writer.StartObject();
 	WriteObject(writer, (CKnownFile*)file, index + 1);
-	writer.Key(_T("")); writer.Int(file->());
-
-
+	writer.Key(_T("isPartFile")); writer.Bool(file->IsPartFile());
+	writer.Key(_T("partMetFileName")); writer.String(file->GetPartMetFileName());
+	writer.Key(_T("AICHHash")); WriteObject(writer, file->GetAICHRecoveryHashSet());
 	if (!index)writer.EndObject();
 }
 
@@ -329,12 +344,12 @@ void WebServerRESTAPI::Process(ThreadData Data)
 	if (sService == _T("server")) {
 		pSocket->SendContent(CT2CA(JSONInit), _GetServerList(Data, sParam));
 	}
-	else if (sService == _T("friend")) {
-		//pSocket->SendContent(CT2CA(JSONInit), _GetServerList(Data, sParam));
-		//TODO: ¶ÁÈ¡friendlist
-		;
+	else if (sService == _T("client")) {
+		pSocket->SendContent(CT2CA(JSONInit), CString(_T("Not Supportt /client Yet")));
 	}
-	else {
+	else if (sService == _T("shared")) {
+		pSocket->SendContent(CT2CA(JSONInit), CString(_T("Not Supportt /shared Yet")));
+	}else {
 		pSocket->SendContent(CT2CA(JSONInit), CString(_T("null")));
 	}
 }
