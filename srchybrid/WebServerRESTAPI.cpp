@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include <locale.h>
 #include "emule.h"
 #include "StringConversion.h"
@@ -65,26 +65,26 @@ typedef Writer<StringBufferT, UTF16<>, UTF16<>> WriterT;
 typedef GenericStringBuffer<UTF8<>> StringBufferT;
 typedef Writer<StringBufferT, UTF8<>, UTF8<>> WriterT;
 #endif
-//»òÐíÐèÒªÔö¼ÓemuleµÄ°æ±¾£¿²¢ÏñÓÎÀÀÆ÷Ò»ÑùÌá¹©²Ù×÷ÏµÍ³µÈµÄÐÅÏ¢£¿ By èÖ×Ó
+//æˆ–è®¸éœ€è¦å¢žåŠ emuleçš„ç‰ˆæœ¬ï¼Ÿå¹¶åƒæ¸¸è§ˆå™¨ä¸€æ ·æä¾›æ“ä½œç³»ç»Ÿç­‰çš„ä¿¡æ¯ï¼Ÿ By æŸšå­
 static const TCHAR* JSONInit = _T("Server: eMule\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\n");
-//WriteObjectÓ¦¸Ã¶ÁÈ¡ÄÇÐ©ÖÖÀàµÄÊý¾Ý£¿
-//TODO: Doing-²ÉÓÃºê´¦ÀíÅúÁ¿µÄwrite.Key¼°ºóÃæµÄÓï¾ä
+//WriteObjectåº”è¯¥è¯»å–é‚£äº›ç§ç±»çš„æ•°æ®ï¼Ÿ
+//TODO: Doing-é‡‡ç”¨å®å¤„ç†æ‰¹é‡çš„write.KeyåŠåŽé¢çš„è¯­å¥
 
 
 static void WriteObject(WriterT& writer, CServer* server)
 {
 	writer.StartObject();
-	writer.Key(_T("listName")); writer.String(server->GetListName());//name¸ÄÎªlistname
-	writer.Key(_T("address")); writer.String(server->GetAddress());//ip¸ÄÎªaddress By èÖ×Ó
+	writer.Key(_T("listName")); writer.String(server->GetListName());//nameæ”¹ä¸ºlistname
+	writer.Key(_T("address")); writer.String(server->GetAddress());//ipæ”¹ä¸ºaddress By æŸšå­
 	writer.Key(_T("port")); writer.Uint(server->GetPort());
 	writer.Key(_T("description")); writer.String(server->GetDescription());
-	//TODO: »¹ÓÐÊ®¼¸¸öÊôÐÔÃ»¼Ó½øÀ´	--ÒÑÌí¼Ó £¬ÖØ¸´ÏîÒÑÉ¾³ý By Yuzu
-	//Notice:ÒÔÏÂÊÇÐÂÊÖèÖ×ÓËùÐ´£¬Çë²»ÒªÏàÐÅÄÄÅÂÒ»¸ö×Ö·û
-	//¸ù¾ÝServer.h¶¨ÒåµÄCServerÀàÌá¹©µÄº¯Êý±àÐ´
-	//ËùÓÐCServerÌá¹©µÄÊôÐÔ¾ùÒÑÌí¼Ó @ 2016-5-24 01£º03
-	//ËÆºõÓÐ²¿·ÖÊôÐÔÊÇÖØ¸´µÄ£¬¿ÉÒÔÈ¥µô£¨ÀýÈç¶àÖÖ¶àÑùµÄIPÊôÐÔ£©
-	//½«Ö±½ÓÊ¹ÓÃºÍº¯ÊýÒ»ÖÂµÄÃû×Ö
-	//ÃüÃû¹æÔò£ºGetXXX->XXX;HasXXX->hasXXX;BoolµÄÔÚÇ°Ãæ²¹³äis	@23£º21
+	//TODO: è¿˜æœ‰åå‡ ä¸ªå±žæ€§æ²¡åŠ è¿›æ¥	--å·²æ·»åŠ  ï¼Œé‡å¤é¡¹å·²åˆ é™¤ By Yuzu
+	//Notice:ä»¥ä¸‹æ˜¯æ–°æ‰‹æŸšå­æ‰€å†™ï¼Œè¯·ä¸è¦ç›¸ä¿¡å“ªæ€•ä¸€ä¸ªå­—ç¬¦
+	//æ ¹æ®Server.hå®šä¹‰çš„CServerç±»æä¾›çš„å‡½æ•°ç¼–å†™
+	//æ‰€æœ‰CServeræä¾›çš„å±žæ€§å‡å·²æ·»åŠ  @ 2016-5-24 01ï¼š03
+	//ä¼¼ä¹Žæœ‰éƒ¨åˆ†å±žæ€§æ˜¯é‡å¤çš„ï¼Œå¯ä»¥åŽ»æŽ‰ï¼ˆä¾‹å¦‚å¤šç§å¤šæ ·çš„IPå±žæ€§ï¼‰
+	//å°†ç›´æŽ¥ä½¿ç”¨å’Œå‡½æ•°ä¸€è‡´çš„åå­—
+	//å‘½åè§„åˆ™ï¼šGetXXX->XXX;HasXXX->hasXXX;Boolçš„åœ¨å‰é¢è¡¥å……is	@23ï¼š21
 	writer.Key(_T("dynIP")); writer.String(server->GetDynIP());
 	writer.Key(_T("IP"));	writer.Uint(server->GetIP());
 	writer.Key(_T("hasDynIP")); writer.Bool(server->HasDynIP());
@@ -106,7 +106,7 @@ static void WriteObject(WriterT& writer, CServer* server)
 	writer.Key(_T("hardFiles")); writer.Uint(server->GetHardFiles());
 	writer.Key(_T("version")); writer.String(server->GetVersion());
 	writer.Key(_T("tCPFlags")); writer.Uint(server->GetTCPFlags());
-	writer.Key(_T("uDPFlags")); writer.Uint(server->GetUDPFlags());//¸Ð¾õÕâÀïÃüÃûÓÐÊ²Ã´²»¶Ô By èÖ×Ó
+	writer.Key(_T("uDPFlags")); writer.Uint(server->GetUDPFlags());//æ„Ÿè§‰è¿™é‡Œå‘½åæœ‰ä»€ä¹ˆä¸å¯¹ By æŸšå­
 	writer.Key(_T("lowIDUsers")); writer.Uint(server->GetLowIDUsers());
 	writer.Key(_T("obfuscationPortTCP")); writer.Uint(server->GetObfuscationPortTCP());
 	writer.Key(_T("obfuscationPortUDP")); writer.Uint(server->GetObfuscationPortUDP());
@@ -121,25 +121,25 @@ static void WriteObject(WriterT& writer, CServer* server)
 	writer.Key(_T("isSupportsObfuscationTCP")); writer.Bool(server->SupportsObfuscationTCP());
 	writer.Key(_T("isSupportsGetSourcesObfuscation")); writer.Bool(server->SupportsGetSourcesObfuscation());
 
-	//ÐÞ¸ÄÁË²¿·Ö²¼¶û±äÁ¿µÄkeyÃû£¬Ê¹Æä¸ü¼ÓÒ»ÖÂ
-	//Í¬Ê±ÎÒÒ²¿´³öÀ´eMuleµÄ´úÂëÊÇÈçºÎ¿ÓµùµÄ@ 2016-5-24 01£º03
-	//¶Ô±ÈCServerÀà¼ì²éÁËÉÏÃæÊôÐÔµÄÍêÕûÐÔ--ÒÑÍê³É@ 2016-5-25 10£º10
-	//ÔÙ´ÎÉ¾³ýÁËÖØ¸´Ïî¡£
+	//ä¿®æ”¹äº†éƒ¨åˆ†å¸ƒå°”å˜é‡çš„keyåï¼Œä½¿å…¶æ›´åŠ ä¸€è‡´
+	//åŒæ—¶æˆ‘ä¹Ÿçœ‹å‡ºæ¥eMuleçš„ä»£ç æ˜¯å¦‚ä½•å‘çˆ¹çš„@ 2016-5-24 01ï¼š03
+	//å¯¹æ¯”CServerç±»æ£€æŸ¥äº†ä¸Šé¢å±žæ€§çš„å®Œæ•´æ€§--å·²å®Œæˆ@ 2016-5-25 10ï¼š10
+	//å†æ¬¡åˆ é™¤äº†é‡å¤é¡¹ã€‚
 	writer.EndObject();
 }
 
-//ÎÒÕýÔÚ³¢ÊÔÐ´Ò»¸ö·µ»ØºÃÓÑµÄº¯Êý£¬ÒòÎªºÃÓÑÁÐ±íËùÐèÒª·µ»ØµÄÊý¾ÝÏà¶Ô¶ÀÁ¢
-//ÎÒºöÈ»Ïëµ½ WriteObiectµÄº¯ÊýÃû»òÐíÓÐÆçÒå£¬
-//¿ÉÄÜÓëÇ°¶Ë²Ù×÷¶ÔÏó£¨±ÈÈçÔö¼ÓºÃÓÑ£©µÄº¯ÊýÃûÖØ¸´£¿@ 2016-5-24 3£º00
-//CFriendÀàµÄ·ç¸ñÓëCServerÀàµÄ·ç¸ñÓÐÒ»¶¨²îÒì£¬ÐèÒª×¢ÒâÒ»ÏÂ¡£
+//æˆ‘æ­£åœ¨å°è¯•å†™ä¸€ä¸ªè¿”å›žå¥½å‹çš„å‡½æ•°ï¼Œå› ä¸ºå¥½å‹åˆ—è¡¨æ‰€éœ€è¦è¿”å›žçš„æ•°æ®ç›¸å¯¹ç‹¬ç«‹
+//æˆ‘å¿½ç„¶æƒ³åˆ° WriteObiectçš„å‡½æ•°åæˆ–è®¸æœ‰æ­§ä¹‰ï¼Œ
+//å¯èƒ½ä¸Žå‰ç«¯æ“ä½œå¯¹è±¡ï¼ˆæ¯”å¦‚å¢žåŠ å¥½å‹ï¼‰çš„å‡½æ•°åé‡å¤ï¼Ÿ@ 2016-5-24 3ï¼š00
+//CFriendç±»çš„é£Žæ ¼ä¸ŽCServerç±»çš„é£Žæ ¼æœ‰ä¸€å®šå·®å¼‚ï¼Œéœ€è¦æ³¨æ„ä¸€ä¸‹ã€‚
 
-//TODO:Íê³ÉCUpDownClientÀàÐÍµÄ·µ»Ø
+//TODO:å®ŒæˆCUpDownClientç±»åž‹çš„è¿”å›ž
 //list=CClientList
 static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char index = 0)
-{ //ÎÒ×¢Òâµ½CUpDownClientÀàÖÐÓÐGetFriend()·½·¨·µ»ØCFriendÀà 
-  //CFriendÀàÖÐÓÐGetLinkedClient()·½·¨·µ»ØCUpDownClientÀà
-  //ÈçºÎ²ÅÄÜ±ÜÃâÎÞÏÞµÝ¹é£¿
-  //Ò»¸ö¿ÉÐÐµÄ·½·¨ÊÇ£¬ËùÓÐWriteObjectÖÐµ÷ÓÃµÄWriteObject·½·¨£¬Ö»·µ»ØË÷ÒýÐÅÏ¢£¬²»·µ»ØÏêÏ¸ÐÅÏ¢
+{ //æˆ‘æ³¨æ„åˆ°CUpDownClientç±»ä¸­æœ‰GetFriend()æ–¹æ³•è¿”å›žCFriendç±» 
+  //CFriendç±»ä¸­æœ‰GetLinkedClient()æ–¹æ³•è¿”å›žCUpDownClientç±»
+  //å¦‚ä½•æ‰èƒ½é¿å…æ— é™é€’å½’ï¼Ÿ
+  //ä¸€ä¸ªå¯è¡Œçš„æ–¹æ³•æ˜¯ï¼Œæ‰€æœ‰WriteObjectä¸­è°ƒç”¨çš„WriteObjectæ–¹æ³•ï¼Œåªè¿”å›žç´¢å¼•ä¿¡æ¯ï¼Œä¸è¿”å›žè¯¦ç»†ä¿¡æ¯
 
 
 	if (index) {
@@ -147,27 +147,191 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
 	}
 	else {
 		writer.StartObject();
-		writer.Key(_T("Client")); writer.String(_T("NotSupportted"));
+
+
+		writer.Key(_T("uploadDatarate")); writer.Uint(client->GetUploadDatarate());
+		writer.Key(_T("userHash")); writer.String(CString(client->GetUserHash()));
+		writer.Key(_T("clientVersion")); writer.Int(client->GetClientSoft());
+		writer.Key(_T("isBanned")); writer.Bool(client->IsBanned());
+		writer.Key(_T("userName")); writer.String(CString(client->GetUserName()));
+		writer.Key(_T("SoftVer")); writer.String(client->GetClientSoftVer());
+		writer.Key(_T("IP")); writer.Int(client->GetIP());//
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+		writer.Key(_T("")); writer.Bool(client->);
+
+		/*
+		case SO_EMULE:			return _T("1");
+		case SO_OLDEMULE:		return _T("1");
+		case SO_EDONKEY:		return _T("0");
+		case SO_EDONKEYHYBRID:	return _T("h");
+		case SO_AMULE:			return _T("a");
+		case SO_SHAREAZA:		return _T("s");
+		case SO_MLDONKEY:		return _T("m");
+		case SO_LPHANT:			return _T("l");
+		case SO_URL:			return _T("u");
+		*/
+		//WriteObject(writer, client->Credits());	//TODO: !!!WriteObject for CClientCredits
+
+
+
+		/*//å…ˆå…¨éƒ¨æ³¨é‡ŠæŽ‰å§
+		writer.Key(_T("Client")); writer.String(_T("NotSupporttedYet"));
+		writer.Key(_T("isEd2kClient")); writer.Bool(client->IsEd2kClient());
+		writer.Key(_T("checkHandshakeFinished")); writer.Bool(client->CheckHandshakeFinished());
+		writer.Key(_T("userIDHybrid")); writer.Int(client->GetUserIDHybrid());
+		
+		writer.Key(_T("hasLowID")); writer.Bool(client->HasLowID());
+		writer.Key(_T("connectIP")); writer.Int(client->GetConnectIP());
+		writer.Key(_T("userPort")); writer.Int(client->GetUserPort());
+		writer.Key(_T("transferredUp")); writer.Int(client->GetTransferredUp());
+		writer.Key(_T("transferredDown")); writer.Int(client->GetTransferredDown());
+		writer.Key(_T("serverIP")); writer.Int(client->GetServerIP());
+		writer.Key(_T("serverPort")); writer.Int(client->GetServerPort());
+		writer.Key(_T("userHash")); writer.String(CString(client->GetUserHash()));
+		writer.Key(_T("hasValidHash")); writer.Bool(client->HasValidHash());
+		writer.Key(_T("hashType")); writer.Int(client->GetHashType());
+		writer.Key(_T("buddyID")); writer.String(CString(client->GetBuddyID()));
+		writer.Key(_T("hasValidBuddyID")); writer.Bool(client->HasValidBuddyID());
+		writer.Key(_T("buddyIP")); writer.Int(client->GetBuddyIP());
+		writer.Key(_T("buddyPort")); writer.Int(client->GetBuddyPort());
+		//WriteObject(writer,client->GetClientSoft());	//TODO: !!!WriteObject for EClientSoftware
+		writer.Key(_T("clientSoftVer")); writer.String(client->GetClientSoftVer());
+		writer.Key(_T("clientModVer")); writer.String(client->GetClientModVer());
+		writer.Key(_T("version")); writer.Int(client->GetVersion());
+		writer.Key(_T("muleVersion")); writer.Int(client->GetMuleVersion());
+		writer.Key(_T("isExtProtocolAvailable")); writer.Bool(client->ExtProtocolAvailable());
+		writer.Key(_T("isSupportMultiPacket")); writer.Bool(client->SupportMultiPacket());
+		writer.Key(_T("isSupportExtMultiPacket")); writer.Bool(client->SupportExtMultiPacket());
+		writer.Key(_T("isSupportPeerCache")); writer.Bool(client->SupportPeerCache());
+		writer.Key(_T("isSupportsLargeFiles")); writer.Bool(client->SupportsLargeFiles());
+		writer.Key(_T("isSupportsFileIdentifiers")); writer.Bool(client->SupportsFileIdentifiers());
+		writer.Key(_T("isEmuleClient")); writer.Bool(client->IsEmuleClient());
+		writer.Key(_T("sourceExchange1Version")); writer.Int(client->GetSourceExchange1Version());
+		writer.Key(_T("isSupportsSourceExchange2")); writer.Bool(client->SupportsSourceExchange2());
+		
+		writer.Key(_T("clientFilename")); writer.String(client->GetClientFilename());
+		writer.Key(_T("uDPPort")); writer.Int(client->GetUDPPort());
+		writer.Key(_T("uDPVersion")); writer.Int(client->GetUDPVersion());
+		writer.Key(_T("isSupportsUDP")); writer.Bool(client->SupportsUDP());
+		writer.Key(_T("kadPort")); writer.Int(client->GetKadPort());
+		writer.Key(_T("extendedRequestsVersion")); writer.Int(client->GetExtendedRequestsVersion());
+		//WriteObject(writer, client->GetConnectingState());//TODO: !!!WriterObject for EConnectingState
+		writer.Key(_T("lastSrcReqTime")); writer.Int(client->GetLastSrcReqTime());
+		writer.Key(_T("lastSrcAnswerTime")); writer.Int(client->GetLastSrcAnswerTime());
+		writer.Key(_T("lastAskedForSources")); writer.Int(client->GetLastAskedForSources());
+		writer.Key(_T("friendSlot")); writer.Bool(client->GetFriendSlot());
+		writer.Key(_T("isFriend")); writer.Bool(client->IsFriend());
+
+		//WriteObject(writer, client->GetFriend(),index+1);//è­¦å‘Šï¼šå¯èƒ½äº§ç”Ÿæ— ç©·é€’å½’
+
+		writer.Key(_T("sentCancelTransfer")); writer.Bool(client->GetSentCancelTransfer());
+		writer.Key(_T("kadVersion")); writer.Int(client->GetKadVersion());
+		writer.Key(_T("isSendBuddyPingPong")); writer.Bool(client->SendBuddyPingPong());
+		writer.Key(_T("isAllowIncomeingBuddyPingPong")); writer.Bool(client->AllowIncomeingBuddyPingPong());
+		writer.Key(_T("secureIdentState")); writer.Int(client->GetSecureIdentState());
+		writer.Key(_T("infoPacketsReceived")); writer.Bool(client->GetInfoPacketsReceived());
+		writer.Key(_T("isSupportPreview")); writer.Bool(client->GetPreviewSupport());
+		writer.Key(_T("isSupportViewSharedFiles")); writer.Bool(client->GetViewSharedFilesSupport());
+		writer.Key(_T("isRequestsCryptLayer")); writer.Bool(client->RequestsCryptLayer());
+		writer.Key(_T("isRequiresCryptLayer")); writer.Bool(client->RequiresCryptLayer());
+		writer.Key(_T("isSupportsDirectUDPCallback")); writer.Bool(client->SupportsDirectUDPCallback());
+		writer.Key(_T("isObfuscatedConnectionEstablished")); writer.Bool(client->IsObfuscatedConnectionEstablished());
+		writer.Key(_T("isShouldReceiveCryptUDPPackets")); writer.Bool(client->ShouldReceiveCryptUDPPackets());
+		WriterObject(writer, client->GetUploadState());	//TODO: WriterObject for EUploadState
+		writer.Key(_T("waitStartTime")); writer.Int64(client->GetWaitStartTime());
+		writer.Key(_T("waitTime")); writer.Int(client->GetWaitTime());
+		writer.Key(_T("isDownloading")); writer.Bool(client->IsDownloading());
+		writer.Key(_T("hasBlocks")); writer.Bool(client->HasBlocks());
+		writer.Key(_T("numberOfRequestedBlocksInQueue")); writer.Uint(client->GetNumberOfRequestedBlocksInQueue());
+		writer.Key(_T("upStartTimeDelay")); writer.Uint(client->GetUpStartTimeDelay());
+		writer.Key(_T("uploadFileID")); writer.String(CString(client->GetUploadFileID()));
+		writer.Key(_T("sendBlockData")); writer.Uint(client->SendBlockData());
+		writer.Key(_T("askedCount")); writer.Uint(client->GetAskedCount());
+		writer.Key(_T("lastUpRequest")); writer.Uint(client->GetLastUpRequest());
+		writer.Key(_T("hasCollectionUploadSlot")); writer.Bool(client->HasCollectionUploadSlot());
+		writer.Key(_T("sessionUp")); writer.Uint(client->GetSessionUp());
+		writer.Key(_T("sessionPayloadDown")); writer.Uint(client->GetSessionPayloadDown());
+		writer.Key(_T("queueSessionPayloadUp")); writer.Bool(client->GetQueueSessionPayloadUp());
+		writer.Key(_T("payloadInBuffer")); writer.Bool(client->GetPayloadInBuffer());
+		writer.Key(_T("upPartCount")); writer.Uint(client->GetUpPartCount());
+		writer.Key(_T("upPartStatus")); writer.Uint(*(client->GetUpPartStatus()));
+		writer.Key(_T("combinedFilePrioAndCredit")); writer.Double(client->GetCombinedFilePrioAndCredit());
+		writer.Key(_T("askedCountDown")); writer.Int(client->GetAskedCountDown());
+		//WriteObject(writer,client->GetDownloadState());	//TODO: WriterObject for EDownloadState
+		writer.Key(_T("partStatus")); writer.Uint(*(client->GetPartStatus()));
+		writer.Key(_T("partCount")); writer.Uint(client->GetPartCount());
+		writer.Key(_T("remoteQueueRank")); writer.Int(client->GetRemoteQueueRank());
+		writer.Key(_T("isRemoteQueueFull")); writer.Bool(client->IsRemoteQueueFull());
+		writer.Key(_T("availablePartCount")); writer.Int(client->GetAvailablePartCount());
+		writer.Key(_T("uDPPacketPending")); writer.Int(client->UDPPacketPending());
+		writer.Key(_T("isSourceRequestAllowed")); writer.Int(client->IsSourceRequestAllowed());
+		writer.Key(_T("isValidSource")); writer.Int(client->IsValidSource());
+		//WriterObject(writer.client->GetSourceFrom());	//TODO: WriterObject for ESourceFrom
+		writer.Key(_T("upCompleteSourcesCount")); writer.Int(client->GetUpCompleteSourcesCount());
+		//WriterObject(writer,client->GetChatState());	//TODO:WriterObject for EChatState
+		//WriterObject(writer,client->GetChatCaptchaState());	//TODO:WriterObject for EChatCaptchaState
+		writer.Key(_T("messagesReceived")); writer.Int(client->GetMessagesReceived());
+		writer.Key(_T("messagesSent")); writer.Int(client->GetMessagesSent());
+		writer.Key(_T("isSpammer")); writer.Bool(client->IsSpammer());
+		writer.Key(_T("messageFiltered")); writer.Bool(client->GetMessageFiltered());
+		//WriterObject(writer,client->GetKadState());	//TODO: WriterObject for EKadState
+		writer.Key(_T("hasFileComment")); writer.Bool(client->HasFileComment());
+		writer.Key(_T("fileComment")); writer.String(client->GetFileComment());
+		writer.Key(_T("hasFileRating")); writer.Bool(client->HasFileRating());
+		writer.Key(_T("reqFileAICHHash")); WriteObject(writer, client->GetReqFileAICHHash());
+		writer.Key(_T("isSupportingAICH")); writer.Bool(client->IsSupportingAICH());
+		writer.Key(_T("isAICHReqPending")); writer.Bool(client->IsAICHReqPending());
+		//WriterObject(writer,client->GetUnicodeSupport());	//TODO: WriterObject for EUtf8Str
+		writer.Key(_T("downloadStateDisplayString")); writer.String(client->GetDownloadStateDisplayString());
+		writer.Key(_T("uploadStateDisplayString")); writer.String(client->GetUploadStateDisplayString());
+		//WriterObject(writer,client->credits);	//TODO: WriterObject for CClientCredits
+		//WriterObject(writer,clienr->m_OtherRequests_list);
+		//WriterObject(writer,clienr->m_OtherNoNeeded_list);	//TODO: WriterObject for CTypedPtrList<CPtrList, CPartFile*>
+		writer.Key(_T("lastPartAsked")); writer.Int(client->m_lastPartAsked);
+		writer.Key(_T("addNextConnect")); writer.Bool(client->m_bAddNextConnect);
+		writer.Key(_T("isDownloadingFromPeerCache")); writer.Bool(client->IsDownloadingFromPeerCache());
+		writer.Key(_T("isUploadingToPeerCache")); writer.Bool(client->IsUploadingToPeerCache());
+		writer.Key(_T("hasPeerCacheState")); writer.Bool(client->HasPeerCacheState());
+		writer.Key(_T("httpSendState")); writer.Int(client->GetHttpSendState());
+		writer.Key(_T("sendPeerCacheFileRequest")); writer.Bool(client->SendPeerCacheFileRequest());
+		writer.Key(_T("onPeerCacheDownSocketTimeout")); writer.Bool(client->OnPeerCacheDownSocketTimeout());
+		writer.Key(_T("upendsoon")); writer.Bool(client->upendsoon);
+		writer.Key(_T("isDifferentPartBlock")); writer.Bool(client->IsDifferentPartBlock());
+		writer.Key(_T("remainingBlocksToDownload")); writer.Bool(client->GetRemainingBlocksToDownload());
+		writer.Key(_T("")); writer.Bool(client->());
+		//*/
 		writer.EndObject();
 	}
 
 }
 
-static void WriteObject(WriterT& writer, CFriend* pail)//ÒòÎªfriendÊÇ¹Ø¼ü×Ö£¬ÕâÀïÓÃpail 
+static void WriteObject(WriterT& writer, CFriend* pail)//å› ä¸ºfriendæ˜¯å…³é”®å­—ï¼Œè¿™é‡Œç”¨pail 
 {
 	CUpDownClient* Client;
 	Client = pail->GetLinkedClient();
 
 	writer.StartObject();
 	writer.Key(_T("userHash")); writer.String(CString(pail->m_abyUserhash));//uchar[16]
-	writer.Key(_T("lastSeen")); writer.Int64(pail->m_dwLastSeen);//ÓÐ¿ÉÄÜÊÇ64Î»Ê±¼ä
+	writer.Key(_T("lastSeen")); writer.Int64(pail->m_dwLastSeen);//æœ‰å¯èƒ½æ˜¯64ä½æ—¶é—´
 	writer.Key(_T("lastUsedIP")); writer.Int(pail->m_dwLastUsedIP);
 	writer.Key(_T("lastUsedPort")); writer.Int(pail->m_nLastUsedPort);
 	writer.Key(_T("lastChatted")); writer.Int(pail->m_dwLastChatted);
 	writer.Key(_T("name")); writer.String(pail->m_strName);
-	//TODO:ÌÖÂÛGetLinkedClient();µÄ·¢ËÍ¸ñÊ½²¢ÊµÏÖ	--×¼±¸½øÐÐ
+	//TODO:è®¨è®ºGetLinkedClient();çš„å‘é€æ ¼å¼å¹¶å®žçŽ°	--å‡†å¤‡è¿›è¡Œ
 	WriteObject(writer, Client);//TODO: WriteObject for CUpDownClient
-	//ÒÔ¼°GetClientForChatSession();µÄ¹¦ÄÜ¼°ÊµÏÖ
+	//ä»¥åŠGetClientForChatSession();çš„åŠŸèƒ½åŠå®žçŽ°
 	writer.Key(_T("isTryToConnet")); writer.Bool(pail->IsTryingToConnect());
 	writer.Key(_T("isFriendSlotted")); writer.Bool(pail->GetFriendSlot());
 	writer.Key(_T("hasUserHash")); writer.Bool(pail->HasUserhash());
@@ -175,9 +339,9 @@ static void WriteObject(WriterT& writer, CFriend* pail)//ÒòÎªfriendÊÇ¹Ø¼ü×Ö£¬ÕâÀ
 
 	writer.EndObject();
 }
-//ËÆºõ·µ»ØCFriendÊÇÍêÈ«Ã»ÓÐ±ØÒªµÄ£¿·µ»ØCUpDownClientÀà¾ÍºÃÁË
-//ÀïÃæÒ²ÓÐisFriend·½·¨£¬Èç¹ûÐèÒª·µ»ØËùÓÐFriend£¬Í¨¹ý²éÑ¯ËùÓÐ
-//isFriend()=TureµÄClient¾ÍºÃ
+//ä¼¼ä¹Žè¿”å›žCFriendæ˜¯å®Œå…¨æ²¡æœ‰å¿…è¦çš„ï¼Ÿè¿”å›žCUpDownClientç±»å°±å¥½äº†
+//é‡Œé¢ä¹Ÿæœ‰isFriendæ–¹æ³•ï¼Œå¦‚æžœéœ€è¦è¿”å›žæ‰€æœ‰Friendï¼Œé€šè¿‡æŸ¥è¯¢æ‰€æœ‰
+//isFriend()=Tureçš„Clientå°±å¥½
 
 
 static void WriteObject(WriterT& writer, CAbstractFile* file, unsigned char index = 0 ) {
@@ -215,7 +379,6 @@ static void WriteObject(WriterT& writer, CShareableFile* file, unsigned char ind
 	writer.Key(_T("infoSummary")); writer.String(file->GetInfoSummary());
 	if (!index)writer.EndObject();
 }
-
 static void WriteObject(WriterT& writer, CKnownFile* file, unsigned char index = 0) {
 	if (!index)writer.StartObject();
 	WriteObject(writer, (CShareableFile*)file, index + 1);
@@ -302,7 +465,7 @@ static void WriteObject(WriterT& writer, CPartFile* file, unsigned char index = 
 }
 
 
-//ÒÔÉÏ
+//ä»¥ä¸Š
 
 CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
 {
@@ -319,7 +482,6 @@ CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
 		CServer* cur = theApp.serverlist->GetServerAt(sc);
 		WriteObject(writer, cur);
 	}
-
 	writer.EndArray();
 	return s.GetString();
 }
@@ -337,10 +499,10 @@ WebServerRESTAPI::~WebServerRESTAPI()
 void WebServerRESTAPI::Process(ThreadData Data)
 {
 	CWebSocket *pSocket = Data.pSocket;
-	int iStart = 6;	//Magic number£¿£¿
+	int iStart = 6;	//Magic numberï¼Ÿï¼Ÿ
 	CString sService = Data.sURL.Tokenize(_T("/"), iStart);
 	CString sParam = Data.sURL.Mid(iStart);
-	//TODO: ÔÚÕâÀïÔö¼Ó¹²ÏíÎÄ¼þ,ÏÂÔØÎÄ¼þ,ÉÏ´«¶ÓÁÐ,ÏÂÔØ¶ÓÁÐµÈ´¦Àí,ÓÃif...else if...elseµÄÐÎÊ½
+	//TODO: åœ¨è¿™é‡Œå¢žåŠ å…±äº«æ–‡ä»¶,ä¸‹è½½æ–‡ä»¶,ä¸Šä¼ é˜Ÿåˆ—,ä¸‹è½½é˜Ÿåˆ—ç­‰å¤„ç†,ç”¨if...else if...elseçš„å½¢å¼
 	if (sService == _T("server")) {
 		pSocket->SendContent(CT2CA(JSONInit), _GetServerList(Data, sParam));
 	}
