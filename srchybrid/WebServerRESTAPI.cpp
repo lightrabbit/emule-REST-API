@@ -132,7 +132,29 @@ static void WriteObject(WriterT& writer, CServer* server)
 //我忽然想到 WriteObiect的函数名或许有歧义，
 //可能与前端操作对象（比如增加好友）的函数名重复？@ 2016-5-24 3：00
 //CFriend类的风格与CServer类的风格有一定差异，需要注意一下。
+static void WriteObject(WriterT& writer, CClientCredits* credit, unsigned char index = 0,CUpDownClient* client=NULL) {
+	if (!index)writer.StartObject();
+	writer.Key(_T("uploadedTotal")); writer.Uint64(credit->GetUploadedTotal());
+	writer.Key(_T("downloadedTotal")); writer.Uint64(credit->GetDownloadedTotal());
+	if (client) {
+		bool ans = credit->GetHasScore(client);
+		writer.Key(_T("hasScore")); writer.Bool(ans);
+		if (ans) {
+			writer.Key(_T("currentIdentState")); writer.Uint(credit->GetCurrentIdentState(client->GetIP()));
+			/*
+			enum EIdentState{
+				IS_NOTAVAILABLE,
+				IS_IDNEEDED,
+				IS_IDENTIFIED,
+				IS_IDFAILED,
+				IS_IDBADGUY,
+			};
+			*/
+		}
 
+	}
+	if (!index)writer.EndObject();
+}
 //TODO:完成CUpDownClient类型的返回
 //list=CClientList
 static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char index = 0)
@@ -155,22 +177,6 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
 		writer.Key(_T("isBanned")); writer.Bool(client->IsBanned());
 		writer.Key(_T("userName")); writer.String(CString(client->GetUserName()));
 		writer.Key(_T("SoftVer")); writer.String(client->GetClientSoftVer());
-		writer.Key(_T("IP")); writer.Int(client->GetIP());//
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-		writer.Key(_T("")); writer.Bool(client->);
-
 		/*
 		case SO_EMULE:			return _T("1");
 		case SO_OLDEMULE:		return _T("1");
@@ -182,8 +188,16 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
 		case SO_LPHANT:			return _T("l");
 		case SO_URL:			return _T("u");
 		*/
-		//WriteObject(writer, client->Credits());	//TODO: !!!WriteObject for CClientCredits
+		writer.Key(_T("IP")); writer.Int(client->GetIP());//
+		writer.Key(_T("isFriend")); writer.Bool(client->IsFriend());
+		WriteObject(writer, client->CheckAndGetReqUpFile());//CKnownFile
+		writer.Key(_T("transferredUp")); writer.Int(client->GetTransferredUp());
+		writer.Key(_T("transferredDown")); writer.Int(client->GetTransferredDown());
+		writer.Key(_T("clientModVer")); writer.String(client->GetClientModVer());
+		writer.Key(_T("version")); writer.Int(client->GetVersion());
+		writer.Key(_T("muleVersion")); writer.Int(client->GetMuleVersion());
 
+		WriteObject(writer, client->Credits(),index+1,client);	//TODO: !!!WriteObject for CClientCredits
 
 
 		/*//先全部注释掉吧
@@ -195,8 +209,7 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
 		writer.Key(_T("hasLowID")); writer.Bool(client->HasLowID());
 		writer.Key(_T("connectIP")); writer.Int(client->GetConnectIP());
 		writer.Key(_T("userPort")); writer.Int(client->GetUserPort());
-		writer.Key(_T("transferredUp")); writer.Int(client->GetTransferredUp());
-		writer.Key(_T("transferredDown")); writer.Int(client->GetTransferredDown());
+
 		writer.Key(_T("serverIP")); writer.Int(client->GetServerIP());
 		writer.Key(_T("serverPort")); writer.Int(client->GetServerPort());
 		writer.Key(_T("userHash")); writer.String(CString(client->GetUserHash()));
@@ -207,10 +220,7 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
 		writer.Key(_T("buddyIP")); writer.Int(client->GetBuddyIP());
 		writer.Key(_T("buddyPort")); writer.Int(client->GetBuddyPort());
 		//WriteObject(writer,client->GetClientSoft());	//TODO: !!!WriteObject for EClientSoftware
-		writer.Key(_T("clientSoftVer")); writer.String(client->GetClientSoftVer());
-		writer.Key(_T("clientModVer")); writer.String(client->GetClientModVer());
-		writer.Key(_T("version")); writer.Int(client->GetVersion());
-		writer.Key(_T("muleVersion")); writer.Int(client->GetMuleVersion());
+
 		writer.Key(_T("isExtProtocolAvailable")); writer.Bool(client->ExtProtocolAvailable());
 		writer.Key(_T("isSupportMultiPacket")); writer.Bool(client->SupportMultiPacket());
 		writer.Key(_T("isSupportExtMultiPacket")); writer.Bool(client->SupportExtMultiPacket());
@@ -345,7 +355,7 @@ static void WriteObject(WriterT& writer, CFriend* pail)//因为friend是关键�
 
 
 static void WriteObject(WriterT& writer, CAbstractFile* file, unsigned char index = 0 ) {
-    if (!index)writer.StartObject();
+	if (!index)writer.StartObject();
 	writer.Key(_T("fileName")); writer.String(file->GetFileName());
 	writer.Key(_T("fileType")); writer.String(file->GetFileType());
 	writer.Key(_T("fileTypeDisplayName")); writer.String(file->GetFileTypeDisplayStr());
