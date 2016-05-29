@@ -4,6 +4,8 @@ class WebServerRESTAPI
 {
 private:
   static CString _GetServerList(ThreadData data, CString & param);
+  static CString _GetClientList(ThreadData data, CString & param);
+  static CString _GetSharedList(ThreadData data, CString & param);
 
 public:
   WebServerRESTAPI();

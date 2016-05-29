@@ -164,10 +164,12 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
   //一个可行的方法是，所有WriteObject中调用的WriteObject方法，只返回索引信息，不返回详细信息
 
 
-	if (index) {
+	//if (index)
+	{
 		writer.Key(_T("clientUserHash")); writer.String(CString(client->GetUserHash()));//uchar[16]
 	}
-	else {
+	//else
+	{
 		writer.StartObject();
 
 
@@ -190,15 +192,18 @@ static void WriteObject(WriterT& writer, CUpDownClient* client, unsigned char in
 		*/
 		writer.Key(_T("IP")); writer.Int(client->GetIP());//
 		writer.Key(_T("isFriend")); writer.Bool(client->IsFriend());
-		WriteObject(writer, client->CheckAndGetReqUpFile());//CKnownFile
+		//WriteObject(writer, client->CheckAndGetReqUpFile());//CKnownFile
 		writer.Key(_T("transferredUp")); writer.Int(client->GetTransferredUp());
 		writer.Key(_T("transferredDown")); writer.Int(client->GetTransferredDown());
 		writer.Key(_T("clientModVer")); writer.String(client->GetClientModVer());
 		writer.Key(_T("version")); writer.Int(client->GetVersion());
 		writer.Key(_T("muleVersion")); writer.Int(client->GetMuleVersion());
 
-		WriteObject(writer, client->Credits(),index+1,client);	//TODO: !!!WriteObject for CClientCredits
+		if(client->Credits())WriteObject(writer, client->Credits(),index+1,client);	//TODO: !!!WriteObject for CClientCredits
+		else {
+			writer.Key(_T("credit")); writer.String(_T("null"));
 
+		}
 
 		/*//先全部注释掉吧
 		writer.Key(_T("Client")); writer.String(_T("NotSupporttedYet"));
@@ -495,7 +500,21 @@ CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
 	writer.EndArray();
 	return s.GetString();
 }
-
+CString WebServerRESTAPI::_GetClientList(ThreadData Data, CString& param)
+{
+	StringBufferT s;
+	WriterT writer(s);
+	writer.StartArray();
+	theApp.clientlist->FindHeadClient();
+	CUpDownClient* cur;
+	while(theApp.clientlist->usedToFindByNumber != NULL) {
+		cur = theApp.clientlist->FindNextClient();
+		if(cur)WriteObject(writer, cur);
+	}
+	writer.EndArray();
+	theApp.clientlist->FindHeadClient();
+	return s.GetString();
+}
 WebServerRESTAPI::WebServerRESTAPI()
 {
 
@@ -517,7 +536,7 @@ void WebServerRESTAPI::Process(ThreadData Data)
 		pSocket->SendContent(CT2CA(JSONInit), _GetServerList(Data, sParam));
 	}
 	else if (sService == _T("client")) {
-		pSocket->SendContent(CT2CA(JSONInit), CString(_T("Not Supportt /client Yet")));
+		pSocket->SendContent(CT2CA(JSONInit), _GetClientList(Data, sParam));
 	}
 	else if (sService == _T("shared")) {
 		pSocket->SendContent(CT2CA(JSONInit), CString(_T("Not Supportt /shared Yet")));

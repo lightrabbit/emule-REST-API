@@ -117,6 +117,10 @@ public:
 	CUpDownClient* FindClientByServerID(uint32 uServerIP, uint32 uUserID) const;
 	CUpDownClient* FindClientByUserID_KadPort(uint32 clientID,uint16 kadPort) const;
 	CUpDownClient* FindClientByIP_KadPort(uint32 ip, uint16 port) const;
+	
+	void FindHeadClient() { usedToFindByNumber = list.GetHeadPosition(); }
+	CUpDownClient* FindNextClient() { return list.GetNext(usedToFindByNumber); }
+	POSITION usedToFindByNumber;
 
 	// Banned clients
 	void	AddBannedClient(uint32 dwIP);
