@@ -73,7 +73,7 @@ public:
 	//或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
 	//Object应该读取那些种类的数据？
 	//TODO: Doing-采用宏处理批量的write.Key及后面的语句
-	void Object(WriterT& writer, CServer* server){
+	void Object(CServer* server){
 		StartObject();
 		Key(_T("listName")); String(server->GetListName());//name改为listname
 		Key(_T("address")); String(server->GetAddress());//ip改为address By 柚子
@@ -133,7 +133,7 @@ public:
 	//我忽然想到 WriteObiect的函数名或许有歧义，
 	//可能与前端操作对象（比如增加好友）的函数名重复？@ 2016-5-24 3：00
 	//CFriend类的风格与CServer类的风格有一定差异，需要注意一下。
-	void Object(WriterT& writer, CClientCredits* credit, unsigned char index = 0, CUpDownClient* client = NULL) {
+	void Object(CClientCredits* credit, unsigned char index = 0, CUpDownClient* client = NULL) {
 		if (!index)StartObject();
 		Key(_T("uploadedTotal")); Uint64(credit->GetUploadedTotal());
 		Key(_T("downloadedTotal")); Uint64(credit->GetDownloadedTotal());
@@ -158,7 +158,7 @@ public:
 	}
 	//TODO:完成CUpDownClient类型的返回
 	//list=CClientList
-	void Object(WriterT& writer, CUpDownClient* client, unsigned char index = 0)
+	void Object(CUpDownClient* client, unsigned char index = 0)
 	{ //我注意到CUpDownClient类中有GetFriend()方法返回CFriend类 
 	  //CFriend类中有GetLinkedClient()方法返回CUpDownClient类
 	  //如何才能避免无限递归？
@@ -193,14 +193,14 @@ public:
 			*/
 			Key(_T("IP")); Int(client->GetIP());//
 			Key(_T("isFriend")); Bool(client->IsFriend());
-			//Object(writer, client->CheckAndGetReqUpFile());//CKnownFile
+			//Object(client->CheckAndGetReqUpFile());//CKnownFile
 			Key(_T("transferredUp")); Int(client->GetTransferredUp());
 			Key(_T("transferredDown")); Int(client->GetTransferredDown());
 			Key(_T("clientModVer")); String(client->GetClientModVer());
 			Key(_T("version")); Int(client->GetVersion());
 			Key(_T("muleVersion")); Int(client->GetMuleVersion());
 
-			if (client->Credits())Object(writer, client->Credits(), index + 1, client);	//TODO: !!!Object for CClientCredits
+			if (client->Credits())Object(client->Credits(), index + 1, client);	//TODO: !!!Object for CClientCredits
 			else {
 				Key(_T("credit")); String(_T("null"));
 
@@ -243,14 +243,14 @@ public:
 			Key(_T("isSupportsUDP")); Bool(client->SupportsUDP());
 			Key(_T("kadPort")); Int(client->GetKadPort());
 			Key(_T("extendedRequestsVersion")); Int(client->GetExtendedRequestsVersion());
-			//Object(writer, client->GetConnectingState());//TODO: !!!WriterObject for EConnectingState
+			//Object(client->GetConnectingState());//TODO: !!!WriterObject for EConnectingState
 			Key(_T("lastSrcReqTime")); Int(client->GetLastSrcReqTime());
 			Key(_T("lastSrcAnswerTime")); Int(client->GetLastSrcAnswerTime());
 			Key(_T("lastAskedForSources")); Int(client->GetLastAskedForSources());
 			Key(_T("friendSlot")); Bool(client->GetFriendSlot());
 			Key(_T("isFriend")); Bool(client->IsFriend());
 
-			//Object(writer, client->GetFriend(),index+1);//警告：可能产生无穷递归
+			//Object(client->GetFriend(),index+1);//警告：可能产生无穷递归
 
 			Key(_T("sentCancelTransfer")); Bool(client->GetSentCancelTransfer());
 			Key(_T("kadVersion")); Int(client->GetKadVersion());
@@ -306,7 +306,7 @@ public:
 			Key(_T("hasFileComment")); Bool(client->HasFileComment());
 			Key(_T("fileComment")); String(client->GetFileComment());
 			Key(_T("hasFileRating")); Bool(client->HasFileRating());
-			Key(_T("reqFileAICHHash")); Object(writer, client->GetReqFileAICHHash());
+			Key(_T("reqFileAICHHash")); Object(client->GetReqFileAICHHash());
 			Key(_T("isSupportingAICH")); Bool(client->IsSupportingAICH());
 			Key(_T("isAICHReqPending")); Bool(client->IsAICHReqPending());
 			//WriterObject(writer,client->GetUnicodeSupport());	//TODO: WriterObject for EUtf8Str
@@ -333,7 +333,7 @@ public:
 
 	}
 
-	void Object(WriterT& writer, CFriend* pail)//因为friend是关键字，这里用pail 
+	void Object(CFriend* pail)//因为friend是关键字，这里用pail 
 	{
 		CUpDownClient* Client;
 		Client = pail->GetLinkedClient();
@@ -346,7 +346,7 @@ public:
 		Key(_T("lastChatted")); Int(pail->m_dwLastChatted);
 		Key(_T("name")); String(pail->m_strName);
 		//TODO:讨论GetLinkedClient();的发送格式并实现	--准备进行
-		Object(writer, Client);//TODO: Object for CUpDownClient
+		Object(Client);//TODO: Object for CUpDownClient
 		//以及GetClientForChatSession();的功能及实现
 		Key(_T("isTryToConnet")); Bool(pail->IsTryingToConnect());
 		Key(_T("isFriendSlotted")); Bool(pail->GetFriendSlot());
@@ -360,7 +360,7 @@ public:
 	//isFriend()=Ture的Client就好
 
 
-	void Object(WriterT& writer, CAbstractFile* file, unsigned char index = 0) {
+	void Object(CAbstractFile* file, unsigned char index = 0) {
 		if (!index)StartObject();
 		Key(_T("fileName")); String(file->GetFileName());
 		Key(_T("fileType")); String(file->GetFileType());
@@ -378,14 +378,14 @@ public:
 		Key(_T("hasBadRating")); Bool(file->HasBadRating());
 		Key(_T("fileComment")); String(file->GetFileComment());
 		Key(_T("fileRating")); Int(file->GetFileRating());
-		//Object(writer, file->getNotes());	//TODO:Object for CKadEntryPtrList
+		//Object(file->getNotes());	//TODO:Object for CKadEntryPtrList
 		Key(_T("isKadCommentSearchRunning")); Bool(file->IsKadCommentSearchRunning());
 		Key(_T("isCompressible")); Bool(file->IsCompressible());
 		if (!index)EndObject();
 	}
-	void Object(WriterT& writer, CShareableFile* file, unsigned char index = 0) {
+	void Object(CShareableFile* file, unsigned char index = 0) {
 		if (!index)StartObject();
-		Object(writer, (CAbstractFile*)file, index + 1);
+		Object((CAbstractFile*)file, index + 1);
 		//Object(writer,file->GetVerifiedFileType());	//TODO:Object for EFileType
 		Key(_T("isPartfile")); Bool(file->IsPartFile());
 		Key(_T("path")); String(file->GetPath());
@@ -395,9 +395,9 @@ public:
 		Key(_T("infoSummary")); String(file->GetInfoSummary());
 		if (!index)EndObject();
 	}
-	void Object(WriterT& writer, CKnownFile* file, unsigned char index = 0) {
+	void Object(CKnownFile* file, unsigned char index = 0) {
 		if (!index)StartObject();
-		Object(writer, (CShareableFile*)file, index + 1);
+		Object((CShareableFile*)file, index + 1);
 		//Object(writer,file->GetUtcCFileDate);
 		Key(_T("utcFileDate")); Int(file->GetUtcFileDate());
 		Key(_T("isShouldPartiallyPurgeFile")); Bool(file->ShouldPartiallyPurgeFile());
@@ -456,27 +456,27 @@ public:
 		Key(_T("psAmountLimit")); Int(file->GetPsAmountLimit());
 		if (!index)EndObject();
 	}
-	void Object(WriterT& writer, CAICHHash* hash, unsigned char index = 0) {
+	void Object(CAICHHash* hash, unsigned char index = 0) {
 		//StartObject();
 		String(hash->GetString());
 		//EndObject();
 	}
-	void Object(WriterT& writer, CAICHHashTree* hash, unsigned char index = 0) {
+	void Object(CAICHHashTree* hash, unsigned char index = 0) {
 		//StartObject();
-		Object(writer, &(hash->m_Hash));
+		Object(&(hash->m_Hash));
 		//EndObject();
 	}
-	void Object(WriterT& writer, CAICHRecoveryHashSet* hash, unsigned char index = 0) {
+	void Object(CAICHRecoveryHashSet* hash, unsigned char index = 0) {
 		//StartObject();
-		Object(writer, &(hash->m_pHashTree));
+		Object(&(hash->m_pHashTree));
 		//EndObject();
 	}
-	void Object(WriterT& writer, CPartFile* file, unsigned char index = 0) {
+	void Object(CPartFile* file, unsigned char index = 0) {
 		if (!index)StartObject();
-		Object(writer, (CKnownFile*)file, index + 1);
+		Object((CKnownFile*)file, index + 1);
 		Key(_T("isPartFile")); Bool(file->IsPartFile());
 		Key(_T("partMetFileName")); String(file->GetPartMetFileName());
-		Key(_T("AICHHash")); Object(writer, file->GetAICHRecoveryHashSet());
+		Key(_T("AICHHash")); Object(file->GetAICHRecoveryHashSet());
 		if (!index)EndObject();
 	}
 };
@@ -496,7 +496,7 @@ CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
 	for (uint32 sc = 0; sc < theApp.serverlist->GetServerCount(); sc++)
 	{
 		CServer* cur = theApp.serverlist->GetServerAt(sc);
-		writer.Object(writer, cur);
+		writer.Object(cur);
 	}
 	writer.EndArray();
 	return s.GetString();
@@ -510,7 +510,7 @@ CString WebServerRESTAPI::_GetClientList(ThreadData Data, CString& param)
 	CUpDownClient* cur;
 	while(theApp.clientlist->usedToFindByNumber != NULL) {
 		cur = theApp.clientlist->FindNextClient();
-		if(cur)writer.Object(writer, cur);
+		if(cur)writer.Object(cur);
 	}
 	writer.EndArray();
 	theApp.clientlist->FindHeadClient();
@@ -525,7 +525,7 @@ CString WebServerRESTAPI::_GetSharedList(ThreadData Data, CString& param)
 	CKnownFile* cur;
 	while (theApp.knownfiles->usedToFindByNumber != NULL) {
 		cur = theApp.knownfiles->FindNextKnownFile();
-		if (cur)writer.Object(writer, cur);
+		if (cur)writer.Object(cur);
 	}
 	writer.EndArray();
 	theApp.knownfiles->FindHeadKnownFile();
@@ -533,7 +533,6 @@ CString WebServerRESTAPI::_GetSharedList(ThreadData Data, CString& param)
 }
 WebServerRESTAPI::WebServerRESTAPI()
 {
-
 }
 
 
