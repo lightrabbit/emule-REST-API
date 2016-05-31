@@ -516,6 +516,21 @@ CString WebServerRESTAPI::_GetClientList(ThreadData Data, CString& param)
 	theApp.clientlist->FindHeadClient();
 	return s.GetString();
 }
+CString WebServerRESTAPI::_GetSharedList(ThreadData Data, CString& param)
+{
+	StringBufferT s;
+	JSONWriter writer(s);
+	writer.StartArray();
+	theApp.knownfiles->FindHeadKnownFile();
+	CKnownFile* cur;
+	while (theApp.knownfiles->usedToFindByNumber != NULL) {
+		cur = theApp.knownfiles->FindNextKnownFile();
+		if (cur)writer.Object(writer, cur);
+	}
+	writer.EndArray();
+	theApp.knownfiles->FindHeadKnownFile();
+	return s.GetString();
+}
 WebServerRESTAPI::WebServerRESTAPI()
 {
 
@@ -540,7 +555,7 @@ void WebServerRESTAPI::Process(ThreadData Data)
 		pSocket->SendContent(CT2CA(JSONInit), _GetClientList(Data, sParam));
 	}
 	else if (sService == _T("shared")) {
-		pSocket->SendContent(CT2CA(JSONInit), CString(_T("Not Supportt /shared Yet")));
+		pSocket->SendContent(CT2CA(JSONInit), _GetSharedList(Data, sParam));
 	}else {
 		pSocket->SendContent(CT2CA(JSONInit), CString(_T("null")));
 	}
