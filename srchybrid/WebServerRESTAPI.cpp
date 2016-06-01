@@ -188,7 +188,7 @@ public:
 		Key(_T("hasNullHash")); Bool(file->HasNullHash());
 		Key(_T("fileHash")); String(ArrToHex(file->GetFileHash(),16));
 		Key(_T("eD2kLink")); String(file->GetED2kLink());//without Hashset;HTMLTag;HostName;Source;dwSourceIP
-		Key(_T("fileSize")); String(CastItoXBytes(file->GetFileSize(), false, false));//TODO: Object for EMFileSize
+		Key(_T("fileSize")); Uint64((uint64)(file->GetFileSize()));//TODO: Object for EMFileSize
 		Key(_T("hasComment")); Bool(file->HasComment());
 		Key(_T("hasUserRating")); Bool(file->HasRating());
 		Key(_T("userRating")); Int(file->UserRating());
@@ -280,6 +280,21 @@ CString WebServerRESTAPI::_GetSharedList(ThreadData Data, CString& param)
 	StringBufferT s;
 	JSONWriter writer(s);
 	writer.StartArray();
+	theApp.sharedfiles->FindHeadKnownFile();
+	CKnownFile* cur;
+	while (theApp.sharedfiles->usedToFindByNumber != NULL) {
+		cur = theApp.sharedfiles->FindNextKnownFile();
+		if (cur)writer.Object(cur);
+	}
+	writer.EndArray();
+	theApp.sharedfiles->FindHeadKnownFile();
+	return s.GetString();
+}
+CString WebServerRESTAPI::_GetknownfList(ThreadData Data, CString& param)
+{
+	StringBufferT s;
+	JSONWriter writer(s);
+	writer.StartArray();
 	theApp.knownfiles->FindHeadKnownFile();
 	CKnownFile* cur;
 	while (theApp.knownfiles->usedToFindByNumber != NULL) {
@@ -313,7 +328,11 @@ void WebServerRESTAPI::Process(ThreadData Data)
 	}
 	else if (sService == _T("shared")) {
 		pSocket->SendContent(CT2CA(JSONInit), _GetSharedList(Data, sParam));
-	}else {
+	}
+	else if (sService == _T("knownf")) {
+		pSocket->SendContent(CT2CA(JSONInit), _GetknownfList(Data, sParam));;
+	}
+	else {
 		pSocket->SendContent(CT2CA(JSONInit), CString(_T("null")));
 	}
 }
