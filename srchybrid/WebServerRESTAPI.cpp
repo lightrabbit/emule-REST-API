@@ -72,60 +72,27 @@ public:
 	
 	//或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
 	//Object应该读取那些种类的数据？
-	//TODO: Doing-采用宏处理批量的write.Key及后面的语句
 	void Object(CServer* server){
 		StartObject();
-		Key(_T("listName")); String(server->GetListName());//name改为listname
-		Key(_T("address")); String(server->GetAddress());//ip改为address By 柚子
+		Key(_T("name")); String(server->GetListName());
+		Key(_T("address")); String(server->GetAddress());
 		Key(_T("port")); Uint(server->GetPort());
 		Key(_T("description")); String(server->GetDescription());
-		//TODO: 还有十几个属性没加进来	--已添加 ，重复项已删除 By Yuzu
-		//Notice:以下是新手柚子所写，请不要相信哪怕一个字符
-		//根据Server.h定义的CServer类提供的函数编写
-		//所有CServer提供的属性均已添加 @ 2016-5-24 01：03
-		//似乎有部分属性是重复的，可以去掉（例如多种多样的IP属性）
-		//将直接使用和函数一致的名字
-		//命名规则：GetXXX->XXX;HasXXX->hasXXX;Bool的在前面补充is	@23：21
-		Key(_T("dynIP")); String(server->GetDynIP());
 		Key(_T("IP"));	Uint(server->GetIP());
-		Key(_T("hasDynIP")); Bool(server->HasDynIP());
-		Key(_T("fullIP")); String(server->GetFullIP());
+		Key(_T("IPstr")); String(server->GetFullIP());
 		Key(_T("files")); Uint(server->GetFiles());
 		Key(_T("users")); Uint(server->GetUsers());
 		Key(_T("preference")); Uint(server->GetPreference());
 		Key(_T("ping")); Uint(server->GetPing());
-		Key(_T("maxUsers")); Uint(server->GetMaxUsers());
 		Key(_T("failedCount")); Uint(server->GetFailedCount());
-		Key(_T("lastPingedTime")); Uint(server->GetLastPingedTime());
-		Key(_T("realLastPingedTime")); Uint(server->GetRealLastPingedTime());
-		Key(_T("gastPinged")); Uint(server->GetLastPinged());
+		Key(_T("lastPinged")); Uint(server->GetLastPinged());
 		Key(_T("lastDescPingedCount")); Uint(server->GetLastDescPingedCount());
 		Key(_T("isStaticMember")); Bool(server->IsStaticMember());
-		Key(_T("challenge")); Uint(server->GetChallenge());
-		Key(_T("descReqChallenge")); Uint(server->GetDescReqChallenge());
 		Key(_T("softFiles")); Uint(server->GetSoftFiles());
 		Key(_T("hardFiles")); Uint(server->GetHardFiles());
 		Key(_T("version")); String(server->GetVersion());
-		Key(_T("tCPFlags")); Uint(server->GetTCPFlags());
-		Key(_T("uDPFlags")); Uint(server->GetUDPFlags());//感觉这里命名有什么不对 By 柚子
 		Key(_T("lowIDUsers")); Uint(server->GetLowIDUsers());
-		Key(_T("obfuscationPortTCP")); Uint(server->GetObfuscationPortTCP());
-		Key(_T("obfuscationPortUDP")); Uint(server->GetObfuscationPortUDP());
-		Key(_T("serverKeyUDP")); Uint(server->GetServerKeyUDP());
-		Key(_T("isCryptPingReplyPending")); Bool(server->GetCryptPingReplyPending());
-		Key(_T("serverKeyUDPIP")); Uint(server->GetServerKeyUDPIP());
-		Key(_T("isSupportsUnicode")); Bool(server->GetUnicodeSupport());
-		Key(_T("isSupportsRelatedSearch")); Bool(server->GetRelatedSearchSupport());
-		Key(_T("isSupportsLargeFilesTCP")); Bool(server->SupportsLargeFilesTCP());
-		Key(_T("isSupportsLargeFilesUDP")); Bool(server->SupportsLargeFilesUDP());
-		Key(_T("isSupportsObfuscationUDP")); Bool(server->SupportsObfuscationUDP());
-		Key(_T("isSupportsObfuscationTCP")); Bool(server->SupportsObfuscationTCP());
-		Key(_T("isSupportsGetSourcesObfuscation")); Bool(server->SupportsGetSourcesObfuscation());
-
-		//修改了部分布尔变量的key名，使其更加一致
-		//同时我也看出来eMule的代码是如何坑爹的@ 2016-5-24 01：03
-		//对比CServer类检查了上面属性的完整性--已完成@ 2016-5-25 10：10
-		//再次删除了重复项。
+		//删除了不必要的项目	by Yuzu @ 2016-6-1	15：45
 		EndObject();
 	}
 
@@ -152,7 +119,6 @@ public:
 				};
 				*/
 			}
-
 		}
 		if (!index)EndObject();
 	}
@@ -163,8 +129,6 @@ public:
 	  //CFriend类中有GetLinkedClient()方法返回CUpDownClient类
 	  //如何才能避免无限递归？
 	  //一个可行的方法是，所有Object中调用的Object方法，只返回索引信息，不返回详细信息
-
-
 		//if (index)
 		{
 			Key(_T("clientUserHash")); String(CString(client->GetUserHash()));//uchar[16]
@@ -172,8 +136,6 @@ public:
 		//else
 		{
 			StartObject();
-
-
 			Key(_T("uploadDatarate")); Uint(client->GetUploadDatarate());
 			Key(_T("userHash")); String(CString(client->GetUserHash()));
 			Key(_T("clientVersion")); Int(client->GetClientSoft());
@@ -203,7 +165,6 @@ public:
 			if (client->Credits())Object(client->Credits(), index + 1, client);	//TODO: !!!Object for CClientCredits
 			else {
 				Key(_T("credit")); String(_T("null"));
-
 			}
 
 			/*//先全部注释掉吧
