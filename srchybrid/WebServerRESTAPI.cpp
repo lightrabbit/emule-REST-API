@@ -340,7 +340,13 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 					}
 				}
 				else if (_T("server") == type) {	
-					break;
+					if (_T("add") == action) {
+						theApp.emuledlg->ProcessED2KLink(link);
+						list.SetAt(_T("result"), _T("success"));
+					}
+					else if (_T("del") == action) {
+						break;
+					}
 				}
 				else if (_T("file") == type) {	
 					break;
