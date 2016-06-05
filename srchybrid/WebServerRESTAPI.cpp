@@ -329,12 +329,10 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 			list.SetAt(_T("linktype"),type);
 			
 			if (_T("ed2k") == type) {
-				
-				link.Tokenize(_T("|"), iStart);
-				int iStart2 = iStart;
-				type = link.Tokenize(_T("|"), iStart2).Mid(iStart);
+				//iStart = 8;
+				type = link.GetAt(9);
 				list.SetAt(_T("ed2klinktype"), type);
-				if (_T("friend") == type) {
+				if (_T("r") == type) {		//friend
 					if (_T("add") == action) {
 						break;
 					}
@@ -342,10 +340,10 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 						break;
 					}
 				}
-				else if (_T("server") == type) {
+				else if (_T("e") == type) {	//server
 					break;
 				}
-				else if (_T("file") == type) {
+				else if (_T("i") == type) {	//file
 					break;
 				}
 			}
@@ -364,12 +362,12 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 	StringBufferT s;
 	JSONWriter writer(s);
 	POSITION pos = list.GetStartPosition();
-	writer.StartArray();
+	writer.StartObject();
 	while (pos) {
 		list.GetNextAssoc(pos, keyword, value);
 		writer.Key(keyword); writer.String(value);
 	}
-	writer.EndArray();
+	writer.EndObject();
 	return s.GetString();
 }
 
