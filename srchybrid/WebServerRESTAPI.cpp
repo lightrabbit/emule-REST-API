@@ -305,31 +305,69 @@ CString WebServerRESTAPI::_GetknownfList(ThreadData Data, CString& param)
 	theApp.knownfiles->FindHeadKnownFile();
 	return s.GetString();
 }
-CString WebServerRESTAPI::_Action(ThreadData Data, CString& param)
-{
-	return Data.sURL;
-}
-CString WebServerRESTAPI::_ActionAdd(ThreadData Data, CString& param)
+
+CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString action)
 {
 	if (param == _T("")) return _T("{message:\"null\"}");
-	CMap<CString, LPCTSTR, CString, LPCTSTR> wordlist;
+	CMap<CString, LPCTSTR, CString, LPCTSTR> list;
 	CString keyword, value;
+	list.SetAt(_T("action"), action);
 	do {
 		int pos = 0,nextpos = 0;
-		keyword = param.Tokenize(_T("="), pos);
-		value = param.Tokenize(_T("&\0"), nextpos).Mid(pos);
-		wordlist.SetAt(keyword, value);
+		keyword = param.Tokenize(_T("=&"), pos);
+		value = param.Tokenize(_T("&"), nextpos).Mid(pos);
+		list.SetAt(keyword, value);
 		param = param.Mid(nextpos);
 	} while (param != _T(""));
 
-	CString ret(_T("{"));
-	POSITION pos = wordlist.GetStartPosition();
-	while (pos) {
-		wordlist.GetNextAssoc(pos, keyword, value);
-		ret += _T("\"") + keyword + _T("\":\"") + value + _T("\",");
-	}
+	do {
+		CString link;
+		if (list.Lookup(_T("link"), link)) {
+			int iStart = 0;
+			CString type;
+			type = link.Tokenize(_T(":"), iStart);	
+			list.SetAt(_T("linktype"),type);
+			
+			if (_T("ed2k") == type) {
+				
+				link.Tokenize(_T("|"), iStart);
+				int iStart2 = iStart;
+				type = link.Tokenize(_T("|"), iStart2).Mid(iStart);
+				list.SetAt(_T("ed2klinktype"), type);
+				if (_T("friend") == type) {
+					if (_T("add") == action) {
+						break;
+					}
+					else if (_T("remove") == action) {
+						break;
+					}
+				}
+				else if (_T("server") == type) {
+					break;
+				}
+				else if (_T("file") == type) {
+					break;
+				}
+			}
+			else if (_T("http") == type) {
+				break;
+			}
+			else {
+				break;
+			}
+		}
+		else {
+			break;
+		}
+	} while (0);
 
-	return ret+_T("}");
+	CString ret;
+	POSITION pos = list.GetStartPosition();
+	while (pos) {
+		list.GetNextAssoc(pos, keyword, value);
+		ret += keyword + _T(" = ") + value + _T("\r\n");
+	}
+	return ret;
 }
 
 WebServerRESTAPI::WebServerRESTAPI()
@@ -343,7 +381,6 @@ WebServerRESTAPI::~WebServerRESTAPI()
 void WebServerRESTAPI::Process(ThreadData Data)
 {
 	CWebSocket *pSocket = Data.pSocket;
-	Data.sURL = URLDecode(Data.sURL);
 	int iStart = 6;	//Magic number？？
 	CString sService = Data.sURL.Tokenize(_T("/"), iStart);
 	CString sParam = Data.sURL.Mid(iStart);
@@ -363,10 +400,7 @@ void WebServerRESTAPI::Process(ThreadData Data)
 	else if (sService == _T("action")) {
 		CString action = Data.sURL.Tokenize(_T("?"), iStart);
 		sParam = Data.sURL.Mid(iStart);
-		if (action == _T("add"))
-			pSocket->SendContent(CT2CA(JSONInit), _ActionAdd(Data, sParam));
-		else if (0);
-		else pSocket->SendContent(CT2CA(JSONInit), _Action(Data, sParam));
+		pSocket->SendContent(CT2CA(JSONInit), _Action(Data, sParam, action));
 	}
 	else{
 		pSocket->SendContent(CT2CA(JSONInit), CString(_T("{message:\"null\"}")));

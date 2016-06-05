@@ -7,8 +7,7 @@ private:
   static CString _GetClientList(ThreadData data, CString & param);
   static CString _GetSharedList(ThreadData data, CString & param);
   static CString _GetknownfList(ThreadData data, CString & param);
-  static CString _ActionAdd(ThreadData data, CString & param);
-  static CString _Action(ThreadData data, CString & param);
+  static CString _Action(ThreadData data, CString & param,CString action=NULL);
 
 
 public:
