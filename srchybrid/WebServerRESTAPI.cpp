@@ -325,25 +325,24 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 		if (list.Lookup(_T("link"), link)) {
 			int iStart = 0;
 			CString type;
-			type = link.Tokenize(_T(":"), iStart);	
-			list.SetAt(_T("linktype"),type);
-			
-			if (_T("ed2k") == type) {
-				//iStart = 8;
-				type = link.GetAt(9);
+			type = link.Tokenize(_T(":"), iStart);
+			if (_T("ed2k") == type) {	
+				type = link.Tokenize(_T("|"), iStart);
+				type = link.Tokenize(_T("|"), iStart);
 				list.SetAt(_T("ed2klinktype"), type);
-				if (_T("r") == type) {		//friend
+				if (_T("friend") == type) {	
 					if (_T("add") == action) {
-						break;
+						theApp.emuledlg->ProcessED2KLink(link);
+						list.SetAt(_T("result"), _T("success"));
 					}
-					else if (_T("remove") == action) {
+					else if (_T("del") == action) {
 						break;
 					}
 				}
-				else if (_T("e") == type) {	//server
+				else if (_T("server") == type) {	
 					break;
 				}
-				else if (_T("i") == type) {	//file
+				else if (_T("file") == type) {	
 					break;
 				}
 			}
@@ -358,6 +357,9 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 			break;
 		}
 	} while (0);
+	if (!list[_T("resule")]) {
+		list.SetAt(_T("result"), _T("no_support_action"));
+	}
 
 	StringBufferT s;
 	JSONWriter writer(s);
@@ -382,6 +384,7 @@ WebServerRESTAPI::~WebServerRESTAPI()
 void WebServerRESTAPI::Process(ThreadData Data)
 {
 	CWebSocket *pSocket = Data.pSocket;
+	//Data.sURL = URLDecode(Data.sURL, true);
 	int iStart = 6;	//Magic number？？
 	CString sService = Data.sURL.Tokenize(_T("/"), iStart);
 	CString sParam = Data.sURL.Mid(iStart);
