@@ -305,7 +305,29 @@ CString WebServerRESTAPI::_GetknownfList(ThreadData Data, CString& param)
 	theApp.knownfiles->FindHeadKnownFile();
 	return s.GetString();
 }
-
+bool progressed2klink(CString & link, CString & action) {
+	CString type;
+	int iStart = 0;
+	type = link.Tokenize(_T("|"), iStart);
+	type = link.Tokenize(_T("|"), iStart);
+	if (_T("friend") == type) {
+		if (_T("add") == action) {
+			theApp.emuledlg->ProcessED2KLink(link);
+		}
+		else if (_T("del") == action) {
+			return false;
+		}
+	}
+	else if (_T("server") == type) {
+		if (_T("add") == action) {
+			theApp.emuledlg->ProcessED2KLink(link);
+		}
+		else if (_T("del") == action) {
+			return false;
+		};
+		return true;
+	}
+}
 CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString action)
 {
 	if (param == _T("")) return _T("{message:\"null\"}");
@@ -326,31 +348,16 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 			int iStart = 0;
 			CString type;
 			type = link.Tokenize(_T(":"), iStart);
-			if (_T("ed2k") == type) {	
-				type = link.Tokenize(_T("|"), iStart);
-				type = link.Tokenize(_T("|"), iStart);
-				list.SetAt(_T("ed2klinktype"), type);
-				if (_T("friend") == type) {	
-					if (_T("add") == action) {
-						theApp.emuledlg->ProcessED2KLink(link);
-						list.SetAt(_T("result"), _T("success"));
-					}
-					else if (_T("del") == action) {
-						break;
-					}
+			if (_T("ed2k") == type) {
+				if (progressed2klink(link, action)) {
+					list.SetAt(_T("result"), _T("no_support_action"));
 				}
-				else if (_T("server") == type) {	
-					if (_T("add") == action) {
-						theApp.emuledlg->ProcessED2KLink(link);
-						list.SetAt(_T("result"), _T("success"));
-					}
-					else if (_T("del") == action) {
-						break;
-					}
-				}
-				else if (_T("file") == type) {	
+				else {
 					break;
 				}
+			}
+			else if (_T("file") == type) {	
+				break;
 			}
 			else if (_T("http") == type) {
 				break;
@@ -390,7 +397,7 @@ WebServerRESTAPI::~WebServerRESTAPI()
 void WebServerRESTAPI::Process(ThreadData Data)
 {
 	CWebSocket *pSocket = Data.pSocket;
-	//Data.sURL = URLDecode(Data.sURL, true);
+	Data.sURL = URLDecode(Data.sURL, true);//URL解码
 	int iStart = 6;	//Magic number？？
 	CString sService = Data.sURL.Tokenize(_T("/"), iStart);
 	CString sParam = Data.sURL.Mid(iStart);
