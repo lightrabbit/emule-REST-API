@@ -361,13 +361,16 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 		}
 	} while (0);
 
-	CString ret;
+	StringBufferT s;
+	JSONWriter writer(s);
 	POSITION pos = list.GetStartPosition();
+	writer.StartArray();
 	while (pos) {
 		list.GetNextAssoc(pos, keyword, value);
-		ret += keyword + _T(" = ") + value + _T("\r\n");
+		writer.Key(keyword); writer.String(value);
 	}
-	return ret;
+	writer.EndArray();
+	return s.GetString();
 }
 
 WebServerRESTAPI::WebServerRESTAPI()
