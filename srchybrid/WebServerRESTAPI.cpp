@@ -305,6 +305,33 @@ CString WebServerRESTAPI::_GetknownfList(ThreadData Data, CString& param)
 	theApp.knownfiles->FindHeadKnownFile();
 	return s.GetString();
 }
+CString WebServerRESTAPI::_Action(ThreadData Data, CString& param)
+{
+	return Data.sURL;
+}
+CString WebServerRESTAPI::_ActionAdd(ThreadData Data, CString& param)
+{
+	if (param == _T("")) return _T("{message:\"null\"}");
+	CMap<CString, LPCTSTR, CString, LPCTSTR> wordlist;
+	CString keyword, value;
+	do {
+		int pos = 0,nextpos = 0;
+		keyword = param.Tokenize(_T("="), pos);
+		value = param.Tokenize(_T("&\0"), nextpos).Mid(pos);
+		wordlist.SetAt(keyword, value);
+		param = param.Mid(nextpos);
+	} while (param != _T(""));
+
+	CString ret(_T("{"));
+	POSITION pos = wordlist.GetStartPosition();
+	while (pos) {
+		wordlist.GetNextAssoc(pos, keyword, value);
+		ret += _T("\"") + keyword + _T("\":\"") + value + _T("\",");
+	}
+
+	return ret+_T("}");
+}
+
 WebServerRESTAPI::WebServerRESTAPI()
 {
 }
@@ -316,6 +343,7 @@ WebServerRESTAPI::~WebServerRESTAPI()
 void WebServerRESTAPI::Process(ThreadData Data)
 {
 	CWebSocket *pSocket = Data.pSocket;
+	Data.sURL = URLDecode(Data.sURL);
 	int iStart = 6;	//Magic number？？
 	CString sService = Data.sURL.Tokenize(_T("/"), iStart);
 	CString sParam = Data.sURL.Mid(iStart);
@@ -330,9 +358,17 @@ void WebServerRESTAPI::Process(ThreadData Data)
 		pSocket->SendContent(CT2CA(JSONInit), _GetSharedList(Data, sParam));
 	}
 	else if (sService == _T("knownf")) {
-		pSocket->SendContent(CT2CA(JSONInit), _GetknownfList(Data, sParam));;
+		pSocket->SendContent(CT2CA(JSONInit), _GetknownfList(Data, sParam));
 	}
-	else {
-		pSocket->SendContent(CT2CA(JSONInit), CString(_T("null")));
+	else if (sService == _T("action")) {
+		CString action = Data.sURL.Tokenize(_T("?"), iStart);
+		sParam = Data.sURL.Mid(iStart);
+		if (action == _T("add"))
+			pSocket->SendContent(CT2CA(JSONInit), _ActionAdd(Data, sParam));
+		else if (0);
+		else pSocket->SendContent(CT2CA(JSONInit), _Action(Data, sParam));
+	}
+	else{
+		pSocket->SendContent(CT2CA(JSONInit), CString(_T("{message:\"null\"}")));
 	}
 }
