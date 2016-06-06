@@ -3,6 +3,7 @@
 #include "OtherFunctions.h"
 #include "WebSocket.h"
 #include "WebServer.h"
+#include "WebServerRESTAPI.h"
 #include "Preferences.h"
 #include "StringConversion.h"
 #include "Log.h"
@@ -37,50 +38,57 @@ void CWebSocket::OnRequestReceived(char* pHeader, DWORD dwHeaderLen, char* pData
   //      2.对Method的支持
   //      3.单独处理data部分而不是放在sURL中
   //          对遗留代码的兼容在WebServer::ProcessURL中处理
-	CStringA sHeader(pHeader, dwHeaderLen);
-	CStringA sData(pData, dwDataLen);
-	CStringA sURL;
-	CStringA sCookie; // Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
-	bool filereq=false;
 
-	if(sHeader.Left(3) == "GET")
-		sURL = sHeader.Trim();
+  WebServerRESTAPI restAPI(this);
 
-	else if(sHeader.Left(4) == "POST")
-		sURL = "?" + sData.Trim();	// '?' to imitate GET syntax for ParseURL
+  bool processed = restAPI.Process(pHeader, dwHeaderLen, pData, dwDataLen, inad);
 
-	// ==> Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
-	int pos = sHeader.Find("Cookie:");
-	if(pos != -1) //found
-	sCookie = sHeader.Mid(pos+7);
-	sCookie.Trim();
-	// <== Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
+  if (!processed) {
+    CStringA sHeader(pHeader, dwHeaderLen);
+    CStringA sData(pData, dwDataLen);
+    CStringA sURL;
+    CStringA sCookie; // Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
+    bool filereq=false;
 
-	if(sURL.Find(" ") > -1)
-		sURL = sURL.Mid(sURL.Find(" ")+1, sURL.GetLength());
-	if(sURL.Find(" ") > -1)
-		sURL = sURL.Left(sURL.Find(" "));
-  //TODO: 或许要在这边考虑对.html文件后缀进行支持
-	if (sURL.GetLength()>4 &&	// min length (for valid extentions)
-		(sURL.Right(4).MakeLower()==".gif" || sURL.Right(4).MakeLower()==".jpg" || sURL.Right(4).MakeLower()==".png" ||
-		sURL.Right(4).MakeLower()==".ico" ||sURL.Right(4).MakeLower()==".css" ||sURL.Right(3).MakeLower()==".js" ||
-		sURL.Right(4).MakeLower()==".bmp" || sURL.Right(5).MakeLower()==".jpeg"
-		)
-		&& sURL.Find("..")==-1	// dont allow leaving the emule-webserver-folder for accessing files
-		)
-			filereq=true;
+    if(sHeader.Left(3) == "GET")
+      sURL = sHeader.Trim();
 
-	ThreadData Data;
-	Data.sURL = sURL;
-	Data.pThis = m_pParent;
-	Data.inadr = inad;
-	Data.pSocket = this;
-	Data.sCookie = sCookie; // Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
+    else if(sHeader.Left(4) == "POST")
+      sURL = "?" + sData.Trim();	// '?' to imitate GET syntax for ParseURL
 
-	if (!filereq)
-		m_pParent->ProcessURL(Data);
-	else
-		m_pParent->ProcessFileReq(Data);
+    // ==> Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
+    int pos = sHeader.Find("Cookie:");
+    if(pos != -1) //found
+      sCookie = sHeader.Mid(pos+7);
+    sCookie.Trim();
+    // <== Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
+
+    if(sURL.Find(" ") > -1)
+      sURL = sURL.Mid(sURL.Find(" ")+1, sURL.GetLength());
+    if(sURL.Find(" ") > -1)
+      sURL = sURL.Left(sURL.Find(" "));
+    //TODO: 或许要在这边考虑对.html文件后缀进行支持
+    if (sURL.GetLength()>4 &&	// min length (for valid extentions)
+      (sURL.Right(4).MakeLower()==".gif" || sURL.Right(4).MakeLower()==".jpg" || sURL.Right(4).MakeLower()==".png" ||
+        sURL.Right(4).MakeLower()==".ico" ||sURL.Right(4).MakeLower()==".css" ||sURL.Right(3).MakeLower()==".js" ||
+        sURL.Right(4).MakeLower()==".bmp" || sURL.Right(5).MakeLower()==".jpeg"
+        )
+      && sURL.Find("..")==-1	// dont allow leaving the emule-webserver-folder for accessing files
+      )
+        filereq=true;
+
+    ThreadData Data;
+    Data.sURL = sURL;
+    Data.pThis = m_pParent;
+    Data.inadr = inad;
+    Data.pSocket = this;
+    Data.sCookie = sCookie; // Multiuser WebInterface Cookie settings [Aireoreion] - Stulle
+
+    if (!filereq)
+      m_pParent->ProcessURL(Data);
+    else
+      m_pParent->ProcessFileReq(Data);
+  }
 
 	Disconnect();
 }

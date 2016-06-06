@@ -42,6 +42,9 @@
 #include <iostream>
 #include "rapidjson/reader.h"
 #include "rapidjson/writer.h"
+#ifdef DEBUG
+#include "rapidjson/prettywriter.h"
+#endif
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/error/en.h"
@@ -50,13 +53,21 @@ using namespace rapidjson;
 
 #ifdef UNICODE
 typedef GenericStringBuffer<UTF16<>> StringBufferT;
+#ifdef DEBUG
+typedef PrettyWriter<StringBufferT, UTF16<>, UTF16<>> WriterT;
+#else
 typedef Writer<StringBufferT, UTF16<>, UTF16<>> WriterT;
+#endif
 #else
 typedef GenericStringBuffer<UTF8<>> StringBufferT;
+#ifdef DEBUG
+typedef PrettyWriter<StringBufferT, UTF8<>, UTF8<>> WriterT;
+#else
 typedef Writer<StringBufferT, UTF8<>, UTF8<>> WriterT;
 #endif
+#endif
 
-static const TCHAR* JSONInit = _T("Server: eMule\r\nConnection: close\r\nContent-Type: application/json\r\n");
+static const TCHAR* JSONInit = _T("Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json\r\n");
 
 static void WriteObject(WriterT& writer, CServer* server) 
 {
@@ -69,11 +80,52 @@ static void WriteObject(WriterT& writer, CServer* server)
   writer.EndObject();
 }
 
-CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
+void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 {
-  CWebServer *pThis = (CWebServer *)Data.pThis;
-  if (pThis == NULL)
-    return _T("null");
+  CStringA header(pHeader, dwHeaderLen);
+  //处理头部
+  int tokenPos = 0;
+  Method = header.Tokenize(" ", tokenPos);
+  URL = header.Tokenize(" ", tokenPos);
+  header.Tokenize("\n", tokenPos);
+
+  while (tokenPos >= 0) {
+    CString key(header.Tokenize(":", tokenPos));
+    if (tokenPos < 0) break;
+    CString value(header.Tokenize("\n", tokenPos).Trim());
+    if (tokenPos < 0) break;
+    Headers[key] = value;
+  }
+
+  //分离路径和查询字符串
+  int queryPos = URL.FindOneOf(_T("?"));
+  if (queryPos > 0) {
+    RawPath = OptUtf8ToStr(URLDecode(URL.Left(queryPos)));
+    RawQueryString = URL.Mid(queryPos + 1);
+  } else {
+    RawPath = URL;
+  }
+  
+  //处理路径
+  CString sToken;
+  tokenPos = 1;
+  while ((sToken = RawPath.Tokenize(_T("/?"), tokenPos)) != _T("")) {
+    Path.Add(sToken);
+  }
+
+  //处理查询字符串
+  tokenPos = 0;
+  while (tokenPos >= 0) {
+    CString key(RawQueryString.Tokenize(_T("="), tokenPos));
+    if (tokenPos < 0) break;
+    CString value(RawQueryString.Tokenize(_T("&"), tokenPos));
+    if (tokenPos < 0) break;
+    QueryString[key] = OptUtf8ToStr(URLDecode(value));
+  }
+}
+
+CString WebServerRESTAPI::_GetServerList()
+{
   StringBufferT s;
   WriterT writer(s);
 
@@ -88,10 +140,61 @@ CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
   writer.EndArray();
   return s.GetString();
 }
-
-WebServerRESTAPI::WebServerRESTAPI()
+#ifdef DEBUG
+CString WebServerRESTAPI::_Dump()
 {
+  StringBufferT s;
 
+  WriterT writer(s);
+  writer.StartObject();
+    
+    writer.Key(_T("Method"));  writer.String(Method);
+    writer.Key(_T("URL"));  writer.String(URL);
+    writer.Key(_T("RawQueryString"));  writer.String(RawQueryString);
+    writer.Key(_T("RawPath"));  writer.String(RawPath);
+
+    writer.Key(_T("Headers"));
+    writer.StartObject();
+    {
+      POSITION i = Headers.GetStartPosition();
+      while (i != NULL) {
+        CString key;
+        CString value;
+        Headers.GetNextAssoc(i, key, value);
+        writer.Key(key);  writer.String(value);
+      }
+    }
+    writer.EndObject();
+
+    writer.Key(_T("Path"));
+    writer.StartArray();
+    for (int i = 0; i < Path.GetCount(); i++)
+      writer.String(Path[i]);
+    writer.EndArray();
+
+    writer.Key(_T("QueryString"));
+    writer.StartObject();
+    {
+      POSITION i = QueryString.GetStartPosition();
+      while (i != NULL) {
+        CString key;
+        CString value;
+        QueryString.GetNextAssoc(i, key, value);
+        writer.Key(key);  writer.String(value);
+      }
+    }
+    writer.EndObject();
+
+    writer.Key(_T("Data"));  writer.String(CString(CStringA(Data, DataLen)));
+    writer.Key(_T("DataLen")); writer.Uint(DataLen);
+
+  writer.EndObject();
+  return s.GetString();
+}
+#endif
+WebServerRESTAPI::WebServerRESTAPI(CWebSocket *socket)
+{
+  Socket = socket;
 }
 
 
@@ -99,16 +202,23 @@ WebServerRESTAPI::~WebServerRESTAPI()
 {
 }
 
-void WebServerRESTAPI::Process(ThreadData Data)
+bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DWORD dwDataLen, in_addr inad)
 {
-  CWebSocket *pSocket = Data.pSocket;
-  int iStart = 6;
-  CString sService = Data.sURL.Tokenize(_T("/"), iStart);
-  CString sParam = Data.sURL.Mid(iStart);
+  _ProcessHeader(pHeader, dwHeaderLen);
+  Data = pData;
+  DataLen = dwDataLen;
   //TODO: 在这里增加共享文件,下载文件,上传队列,下载队列等处理,用if...else if...else的形式
-  if (sService == _T("server")) {
-    pSocket->SendContent(CT2CA(JSONInit), _GetServerList(Data, sParam));
+  if (Path[0] == _T("server")) {
+    Socket->SendContent(CT2CA(JSONInit), _GetServerList());
+    return true;
+  } else if (Path[0] == _T("dump")) {
+#ifdef DEBUG
+    Socket->SendContent(CT2CA(JSONInit), _Dump());
+    return true;
+#else
+    return false;
+#endif
   } else {
-    pSocket->SendContent(CT2CA(JSONInit), CString(_T("null")));
+    return false;
   }
 }
