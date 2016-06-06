@@ -100,7 +100,7 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
   //分离路径和查询字符串
   int queryPos = URL.FindOneOf(_T("?"));
   if (queryPos > 0) {
-    RawPath = URL.Left(queryPos);
+    RawPath = OptUtf8ToStr(URLDecode(URL.Left(queryPos)));
     RawQueryString = URL.Mid(queryPos + 1);
   } else {
     RawPath = URL;
@@ -120,7 +120,7 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
     if (tokenPos < 0) break;
     CString value(RawQueryString.Tokenize(_T("&"), tokenPos));
     if (tokenPos < 0) break;
-    QueryString[key] = URLDecode(value);
+    QueryString[key] = OptUtf8ToStr(URLDecode(value));
   }
 }
 
