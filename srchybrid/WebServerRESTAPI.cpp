@@ -51,6 +51,9 @@
 #include <iostream>
 #include "rapidjson/reader.h"
 #include "rapidjson/writer.h"
+#ifdef DEBUG
+#include "rapidjson/prettywriter.h"
+#endif
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/error/en.h"
@@ -60,17 +63,27 @@ using namespace rapidjson;
 
 #ifdef UNICODE
 typedef GenericStringBuffer<UTF16<>> StringBufferT;
+#ifdef DEBUG
+typedef PrettyWriter<StringBufferT, UTF16<>, UTF16<>> WriterT;
+#else
 typedef Writer<StringBufferT, UTF16<>, UTF16<>> WriterT;
+#endif
 #else
 typedef GenericStringBuffer<UTF8<>> StringBufferT;
+#ifdef DEBUG
+typedef PrettyWriter<StringBufferT, UTF8<>, UTF8<>> WriterT;
+#else
 typedef Writer<StringBufferT, UTF8<>, UTF8<>> WriterT;
 #endif
-static const TCHAR* JSONInit = _T("Server: eMule\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\n");
+#endif
+
+static const TCHAR* JSONInit = _T("Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json\r\n");
 class JSONWriter :public WriterT {
 public:
 	JSONWriter(StringBufferT&os) :WriterT(os) {}
 	
 	//或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
+  //这个事情在WebServerRESTAPI类中来做可能更合适
 	//Object应该读取那些种类的数据？
 	void Object(CServer* server){
 		StartObject();
@@ -242,13 +255,107 @@ public:
 };
 //以上
 
-CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
+void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 {
-	CWebServer *pThis = (CWebServer *)Data.pThis;
-	if (pThis == NULL)
-		return _T("null");
-	StringBufferT s;
-	JSONWriter writer(s);
+  CStringA header(pHeader, dwHeaderLen);
+  //处理头部
+  int tokenPos = 0;
+  Method = header.Tokenize(" ", tokenPos);
+  URL = header.Tokenize(" ", tokenPos);
+  header.Tokenize("\n", tokenPos);
+
+  while (tokenPos >= 0) {
+    CString key(header.Tokenize(":", tokenPos));
+    if (tokenPos < 0) break;
+    CString value(header.Tokenize("\n", tokenPos).Trim());
+    if (tokenPos < 0) break;
+    Headers[key] = value;
+  }
+
+  //分离路径和查询字符串
+  int queryPos = URL.FindOneOf(_T("?"));
+  if (queryPos > 0) {
+    RawPath = OptUtf8ToStr(URLDecode(URL.Left(queryPos)));
+    RawQueryString = URL.Mid(queryPos + 1);
+  } else {
+    RawPath = URL;
+  }
+  
+  //处理路径
+  CString sToken;
+  tokenPos = 1;
+  while ((sToken = RawPath.Tokenize(_T("/?"), tokenPos)) != _T("")) {
+    Path.Add(sToken);
+  }
+
+  //处理查询字符串
+  tokenPos = 0;
+  while (tokenPos >= 0) {
+    CString key(RawQueryString.Tokenize(_T("="), tokenPos));
+    if (tokenPos < 0) break;
+    CString value(RawQueryString.Tokenize(_T("&"), tokenPos));
+    if (tokenPos < 0) break;
+    QueryString[key] = OptUtf8ToStr(URLDecode(value));
+  }
+}
+
+#ifdef DEBUG
+CString WebServerRESTAPI::_Dump()
+{
+  StringBufferT s;
+
+  WriterT writer(s);
+  writer.StartObject();
+
+  writer.Key(_T("Method"));  writer.String(Method);
+  writer.Key(_T("URL"));  writer.String(URL);
+  writer.Key(_T("RawQueryString"));  writer.String(RawQueryString);
+  writer.Key(_T("RawPath"));  writer.String(RawPath);
+
+  writer.Key(_T("Headers"));
+  writer.StartObject();
+  {
+    POSITION i = Headers.GetStartPosition();
+    while (i != NULL) {
+      CString key;
+      CString value;
+      Headers.GetNextAssoc(i, key, value);
+      writer.Key(key);  writer.String(value);
+    }
+  }
+  writer.EndObject();
+
+  writer.Key(_T("Path"));
+  writer.StartArray();
+  for (int i = 0; i < Path.GetCount(); i++)
+    writer.String(Path[i]);
+  writer.EndArray();
+
+  writer.Key(_T("QueryString"));
+  writer.StartObject();
+  {
+    POSITION i = QueryString.GetStartPosition();
+    while (i != NULL) {
+      CString key;
+      CString value;
+      QueryString.GetNextAssoc(i, key, value);
+      writer.Key(key);  writer.String(value);
+    }
+  }
+  writer.EndObject();
+
+  writer.Key(_T("Data"));  writer.String(CString(CStringA(Data, DataLen)));
+  writer.Key(_T("DataLen")); writer.Uint(DataLen);
+
+  writer.EndObject();
+  return s.GetString();
+}
+#endif
+
+CString WebServerRESTAPI::_GetServerList()
+{
+  StringBufferT s;
+  JSONWriter writer(s);
 
 	writer.StartArray();
 
@@ -260,7 +367,8 @@ CString WebServerRESTAPI::_GetServerList(ThreadData Data, CString& param)
 	writer.EndArray();
 	return s.GetString();
 }
-CString WebServerRESTAPI::_GetClientList(ThreadData Data, CString& param)
+
+CString WebServerRESTAPI::_GetClientList()
 {
 	StringBufferT s;
 	JSONWriter writer(s);
@@ -275,7 +383,8 @@ CString WebServerRESTAPI::_GetClientList(ThreadData Data, CString& param)
 	theApp.clientlist->FindHeadClient();
 	return s.GetString();
 }
-CString WebServerRESTAPI::_GetSharedList(ThreadData Data, CString& param)
+
+CString WebServerRESTAPI::_GetSharedList()
 {
 	StringBufferT s;
 	JSONWriter writer(s);
@@ -290,7 +399,8 @@ CString WebServerRESTAPI::_GetSharedList(ThreadData Data, CString& param)
 	theApp.sharedfiles->FindHeadKnownFile();
 	return s.GetString();
 }
-CString WebServerRESTAPI::_GetknownfList(ThreadData Data, CString& param)
+
+CString WebServerRESTAPI::_GetknownfList()
 {
 	StringBufferT s;
 	JSONWriter writer(s);
@@ -305,6 +415,8 @@ CString WebServerRESTAPI::_GetknownfList(ThreadData Data, CString& param)
 	theApp.knownfiles->FindHeadKnownFile();
 	return s.GetString();
 }
+
+// TODO: 这里函数名貌似不对?
 bool progressed2klink(CString & link, CString & action) {
 	CString type;
 	int iStart = 0;
@@ -328,7 +440,9 @@ bool progressed2klink(CString & link, CString & action) {
 		return true;
 	}
 }
-CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString action)
+
+// TODO: 这里可以根据兔子那边增加的请求头处理函数处理后的数据来优化代码结构
+CString WebServerRESTAPI::_Action(CString & param, CString action)
 {
 	if (param == _T("")) return _T("{message:\"null\"}");
 	CMap<CString, LPCTSTR, CString, LPCTSTR> list;
@@ -386,40 +500,55 @@ CString WebServerRESTAPI::_Action(ThreadData data, CString & param, CString acti
 	return s.GetString();
 }
 
-WebServerRESTAPI::WebServerRESTAPI()
+WebServerRESTAPI::WebServerRESTAPI(CWebSocket *socket)
 {
+  Socket = socket;
 }
 
 WebServerRESTAPI::~WebServerRESTAPI()
 {
 }
 
-void WebServerRESTAPI::Process(ThreadData Data)
+bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DWORD dwDataLen, in_addr inad)
 {
-	CWebSocket *pSocket = Data.pSocket;
-	Data.sURL = URLDecode(Data.sURL, true);//URL解码
-	int iStart = 6;	//Magic number？？
-	CString sService = Data.sURL.Tokenize(_T("/"), iStart);
-	CString sParam = Data.sURL.Mid(iStart);
+  _ProcessHeader(pHeader, dwHeaderLen);
+  Data = pData;
+  DataLen = dwDataLen;
+
 	//TODO: 在这里增加共享文件,下载文件,上传队列,下载队列等处理,用if...else if...else的形式
-	if (sService == _T("server")) {
-		pSocket->SendContent(CT2CA(JSONInit), _GetServerList(Data, sParam));
+	if (Path[0] == _T("server")) {
+		Socket->SendContent(CT2CA(JSONInit), _GetServerList());
+    return true;
 	}
-	else if (sService == _T("client")) {
-		pSocket->SendContent(CT2CA(JSONInit), _GetClientList(Data, sParam));
+	else if (Path[0] == _T("client")) {
+		Socket->SendContent(CT2CA(JSONInit), _GetClientList());
+    return true;
 	}
-	else if (sService == _T("shared")) {
-		pSocket->SendContent(CT2CA(JSONInit), _GetSharedList(Data, sParam));
+	else if (Path[0] == _T("shared")) {
+		Socket->SendContent(CT2CA(JSONInit), _GetSharedList());
+    return true;
 	}
-	else if (sService == _T("knownf")) {
-		pSocket->SendContent(CT2CA(JSONInit), _GetknownfList(Data, sParam));
+	else if (Path[0] == _T("knownf")) {
+		Socket->SendContent(CT2CA(JSONInit), _GetknownfList());
+    return true;
 	}
-	else if (sService == _T("action")) {
-		CString action = Data.sURL.Tokenize(_T("?"), iStart);
-		sParam = Data.sURL.Mid(iStart);
-		pSocket->SendContent(CT2CA(JSONInit), _Action(Data, sParam, action));
+	else if (Path[0] == _T("action")) {
+    if (Path.GetCount() == 2) {
+      Socket->SendContent(CT2CA(JSONInit), _Action(RawQueryString, Path[1]));
+      return true;
+    } else {
+      return false;
+    }
 	}
+  else if (Path[0] == _T("dump")) {
+#ifdef DEBUG
+    Socket->SendContent(CT2CA(JSONInit), _Dump());
+    return true;
+#else
+    return false;
+#endif
+  }
 	else{
-		pSocket->SendContent(CT2CA(JSONInit), CString(_T("{message:\"null\"}")));
+    return false;
 	}
 }
