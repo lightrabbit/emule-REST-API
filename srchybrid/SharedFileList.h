@@ -78,6 +78,14 @@ public:
 	CKnownFile* GetFileByID(const uchar* filehash) const;
 	CKnownFile* GetFileByIdentifier(const CFileIdentifierBase& rFileIdent, bool bStrict = false) const;
 	CKnownFile*	GetFileByIndex(int index);
+	POSITION usedToFindByNumber;
+	void FindHeadKnownFile() { usedToFindByNumber = m_Files_map.GetStartPosition(); }
+	CKnownFile* FindNextKnownFile() {
+		CKnownFile* cur_file;
+		CCKey key;
+		m_Files_map.GetNextAssoc(usedToFindByNumber, key, cur_file);
+		return cur_file;
+	}
 	bool	IsFilePtrInList(const CKnownFile* file) const; // slow
 	bool	IsUnsharedFile(const uchar* auFileHash) const;
 	bool	ShouldBeShared(CString strPath, CString strFilePath, bool bMustBeShared) const;

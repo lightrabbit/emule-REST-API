@@ -30,14 +30,20 @@ private:
   DWORD DataLen;
 
 private:
+  // 处理请求头
   void _ProcessHeader(char* pHeader, DWORD dwHeaderLen);
-  CString _GetServerList();
+
 #ifdef DEBUG
   // 调试用函数,将请求所包含的内容解析后原样返回
-  CString _Dump();
+  bool _Dump();
 #endif // DEBUG
-  
-  
+
+  bool _GetServerList();
+  bool _GetClientList();
+  bool _GetSharedList();
+  bool _GetknownfList();
+  CString _Action(CString & param,CString action=NULL);
+
 
 public:
   WebServerRESTAPI(CWebSocket* socket);

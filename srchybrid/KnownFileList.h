@@ -60,6 +60,16 @@ public:
 	CKnownFile* FindKnownFile(LPCTSTR filename, uint32 date, uint64 size) const;
 	CKnownFile* FindKnownFileByID(const uchar* hash) const;
 	CKnownFile* FindKnownFileByPath(const CString& sFilePath) const;
+	
+	POSITION usedToFindByNumber;
+	void FindHeadKnownFile() { usedToFindByNumber = m_Files_map.GetStartPosition(); }
+	CKnownFile* FindNextKnownFile() { 
+		CKnownFile* cur_file;
+		CCKey key;
+		m_Files_map.GetNextAssoc(usedToFindByNumber, key, cur_file);
+		return cur_file;
+	}
+
 	bool	IsKnownFile(const CKnownFile* file) const;
 	bool	IsFilePtrInList(const CKnownFile* file) const;
 

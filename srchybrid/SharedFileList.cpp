@@ -1402,6 +1402,7 @@ CKnownFile* CSharedFileList::GetFileByIdentifier(const CFileIdentifierBase& rFil
 }
 
 
+
 bool CSharedFileList::IsFilePtrInList(const CKnownFile* file) const
 {
 	if (file)
