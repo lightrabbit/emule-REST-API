@@ -35,13 +35,13 @@ private:
 
 #ifdef DEBUG
   // 调试用函数,将请求所包含的内容解析后原样返回
-  CString _Dump();
+  bool _Dump();
 #endif // DEBUG
 
-  CString _GetServerList();
-  CString _GetClientList();
-  CString _GetSharedList();
-  CString _GetknownfList();
+  bool _GetServerList();
+  bool _GetClientList();
+  bool _GetSharedList();
+  bool _GetknownfList();
   CString _Action(CString & param,CString action=NULL);
 
 

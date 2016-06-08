@@ -62,22 +62,28 @@
 using namespace rapidjson;
 
 #ifdef UNICODE
-typedef GenericStringBuffer<UTF16<>> StringBufferT;
+typedef StringBuffer StringBufferT;
 #ifdef DEBUG
-typedef PrettyWriter<StringBufferT, UTF16<>, UTF16<>> WriterT;
+typedef PrettyWriter<StringBufferT, UTF16<>> WriterT;
 #else
-typedef Writer<StringBufferT, UTF16<>, UTF16<>> WriterT;
+typedef Writer<StringBufferT, UTF16<>> WriterT;
 #endif
 #else
-typedef GenericStringBuffer<UTF8<>> StringBufferT;
+typedef StringBuffer StringBufferT;
 #ifdef DEBUG
-typedef PrettyWriter<StringBufferT, UTF8<>, UTF8<>> WriterT;
+typedef PrettyWriter<StringBufferT> WriterT;
 #else
-typedef Writer<StringBufferT, UTF8<>, UTF8<>> WriterT;
+typedef Writer<StringBufferT> WriterT;
 #endif
 #endif
 
-static const TCHAR* JSONInit = _T("Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json\r\n");
+#ifdef DEBUG
+static const char* JSONInit = "Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\nAccess-Control-Allow-Origin: *\r\n";
+#else
+static const char* JSONInit = "Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\n";
+#endif // DEBUG
+
+
 class JSONWriter :public WriterT {
 public:
 	JSONWriter(StringBufferT&os) :WriterT(os) {}
@@ -300,7 +306,7 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 }
 
 #ifdef DEBUG
-CString WebServerRESTAPI::_Dump()
+bool WebServerRESTAPI::_Dump()
 {
   StringBufferT s;
 
@@ -348,11 +354,13 @@ CString WebServerRESTAPI::_Dump()
   writer.Key(_T("DataLen")); writer.Uint(DataLen);
 
   writer.EndObject();
-  return s.GetString();
+
+  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  return true;
 }
 #endif
 
-CString WebServerRESTAPI::_GetServerList()
+bool WebServerRESTAPI::_GetServerList()
 {
   StringBufferT s;
   JSONWriter writer(s);
@@ -365,13 +373,16 @@ CString WebServerRESTAPI::_GetServerList()
 		writer.Object(cur);
 	}
 	writer.EndArray();
-	return s.GetString();
+
+  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  return true;
 }
 
-CString WebServerRESTAPI::_GetClientList()
+bool WebServerRESTAPI::_GetClientList()
 {
 	StringBufferT s;
 	JSONWriter writer(s);
+
 	writer.StartArray();
 	theApp.clientlist->FindHeadClient();
 	CUpDownClient* cur;
@@ -381,13 +392,16 @@ CString WebServerRESTAPI::_GetClientList()
 	}
 	writer.EndArray();
 	theApp.clientlist->FindHeadClient();
-	return s.GetString();
+
+  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	return true;
 }
 
-CString WebServerRESTAPI::_GetSharedList()
+bool WebServerRESTAPI::_GetSharedList()
 {
 	StringBufferT s;
 	JSONWriter writer(s);
+
 	writer.StartArray();
 	theApp.sharedfiles->FindHeadKnownFile();
 	CKnownFile* cur;
@@ -397,13 +411,16 @@ CString WebServerRESTAPI::_GetSharedList()
 	}
 	writer.EndArray();
 	theApp.sharedfiles->FindHeadKnownFile();
-	return s.GetString();
+
+  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  return true;
 }
 
-CString WebServerRESTAPI::_GetknownfList()
+bool WebServerRESTAPI::_GetknownfList()
 {
 	StringBufferT s;
 	JSONWriter writer(s);
+
 	writer.StartArray();
 	theApp.knownfiles->FindHeadKnownFile();
 	CKnownFile* cur;
@@ -413,7 +430,9 @@ CString WebServerRESTAPI::_GetknownfList()
 	}
 	writer.EndArray();
 	theApp.knownfiles->FindHeadKnownFile();
-	return s.GetString();
+
+  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  return true;
 }
 
 // TODO: 这里函数名貌似不对?
@@ -497,7 +516,8 @@ CString WebServerRESTAPI::_Action(CString & param, CString action)
 		writer.Key(keyword); writer.String(value);
 	}
 	writer.EndObject();
-	return s.GetString();
+  
+	return CString(CStringA(s.GetString()));
 }
 
 WebServerRESTAPI::WebServerRESTAPI(CWebSocket *socket)
@@ -517,24 +537,20 @@ bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DW
 
 	//TODO: 在这里增加共享文件,下载文件,上传队列,下载队列等处理,用if...else if...else的形式
 	if (Path[0] == _T("server")) {
-		Socket->SendContent(CT2CA(JSONInit), _GetServerList());
-    return true;
+    return _GetServerList();
 	}
 	else if (Path[0] == _T("client")) {
-		Socket->SendContent(CT2CA(JSONInit), _GetClientList());
-    return true;
+    return _GetClientList();
 	}
 	else if (Path[0] == _T("shared")) {
-		Socket->SendContent(CT2CA(JSONInit), _GetSharedList());
-    return true;
+    return _GetSharedList();
 	}
 	else if (Path[0] == _T("knownf")) {
-		Socket->SendContent(CT2CA(JSONInit), _GetknownfList());
-    return true;
+    return _GetknownfList();
 	}
 	else if (Path[0] == _T("action")) {
     if (Path.GetCount() == 2) {
-      Socket->SendContent(CT2CA(JSONInit), _Action(RawQueryString, Path[1]));
+      Socket->SendContent(JSONInit, _Action(RawQueryString, Path[1]));
       return true;
     } else {
       return false;
@@ -542,8 +558,7 @@ bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DW
 	}
   else if (Path[0] == _T("dump")) {
 #ifdef DEBUG
-    Socket->SendContent(CT2CA(JSONInit), _Dump());
-    return true;
+    return _Dump();
 #else
     return false;
 #endif
