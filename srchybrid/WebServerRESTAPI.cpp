@@ -535,6 +535,9 @@ bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DW
   Data = pData;
   DataLen = dwDataLen;
 
+  // 处理访问根路径的情况
+  if (Path.GetCount() == 0) return false;
+
 	//TODO: 在这里增加共享文件,下载文件,上传队列,下载队列等处理,用if...else if...else的形式
 	if (Path[0] == _T("server")) {
     return _GetServerList();
