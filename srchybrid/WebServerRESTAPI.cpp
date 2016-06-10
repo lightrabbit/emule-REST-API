@@ -47,35 +47,7 @@
 #include "Packets.h"
 #include "clientlist.h"
 
-
-#include <iostream>
-#include "rapidjson/reader.h"
-#include "rapidjson/writer.h"
-#ifdef DEBUG
-#include "rapidjson/prettywriter.h"
-#endif
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/error/en.h"
-
-
 using namespace rapidjson;
-
-#ifdef UNICODE
-typedef StringBuffer StringBufferT;
-#ifdef DEBUG
-typedef PrettyWriter<StringBufferT, UTF16<>> WriterT;
-#else
-typedef Writer<StringBufferT, UTF16<>> WriterT;
-#endif
-#else
-typedef StringBuffer StringBufferT;
-#ifdef DEBUG
-typedef PrettyWriter<StringBufferT> WriterT;
-#else
-typedef Writer<StringBufferT> WriterT;
-#endif
-#endif
 
 #ifdef DEBUG
 static const char* JSONInit = "Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\nAccess-Control-Allow-Origin: *\r\n";
@@ -261,6 +233,54 @@ public:
 };
 //以上
 
+const char * WebServerRESTAPI::_getStatusString(int status)
+{
+  switch (status) {
+    case 100: return "Continue";
+    case 101: return "Switching Protocols";
+    case 200: return "OK";
+    case 201: return "Created";
+    case 202: return "Accepted";
+    case 203: return "Non-Authoritative Information";
+    case 204: return "No Content";
+    case 205: return "Reset Content";
+    case 206: return "Partial Content";
+    case 300: return "Multiple Choices";
+    case 301: return "Moved Permanently";
+    case 302: return "Found";
+    case 303: return "See Other";
+    case 304: return "Not Modified";
+    case 305: return "Use Proxy";
+      //case 306: return "(reserved)";
+    case 307: return "Temporary Redirect";
+    case 400: return "Bad Request";
+    case 401: return "Unauthorized";
+    case 402: return "Payment Required";
+    case 403: return "Forbidden";
+    case 404: return "Not Found";
+    case 405: return "Method Not Allowed";
+    case 406: return "Not Acceptable";
+    case 407: return "Proxy Authentication Required";
+    case 408: return "Request Timeout";
+    case 409: return "Conflict";
+    case 410: return "Gone";
+    case 411: return "Length Required";
+    case 412: return "Precondition Failed";
+    case 413: return "Request Entity Too Large";
+    case 414: return "Request-URI Too Long";
+    case 415: return "Unsupported Media Type";
+    case 416: return "Requested Range Not Satisfiable";
+    case 417: return "Expectation Failed";
+    case 500: return "Internal Server Error";
+    case 501: return "Not Implemented";
+    case 502: return "Bad Gateway";
+    case 503: return "Service Unavailable";
+    case 504: return "Gateway Timeout";
+    case 505: return "HTTP Version Not Supported";
+    default: throw CString("Not supported status code.");
+  }
+}
+
 void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 {
   CStringA header(pHeader, dwHeaderLen);
@@ -302,6 +322,23 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
     CString value(RawQueryString.Tokenize(_T("&"), tokenPos));
     if (tokenPos < 0) break;
     QueryString[key] = OptUtf8ToStr(URLDecode(value));
+  }
+}
+
+void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, StringBufferT & data)
+{
+  _Response(status, szStdResponse, data.GetString(), data.GetSize());
+}
+
+void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, const void * data, DWORD dwDataLen)
+{
+  char szBuf[0x1000];
+  int nLen = _snprintf(szBuf, _countof(szBuf),
+    "HTTP/1.1 %d %s\r\n%sContent-Length: %ld\r\n\r\n",
+    status, _getStatusString(status), szStdResponse, dwDataLen);
+  if (nLen > 0) {
+    Socket->SendData(szBuf, nLen);
+    Socket->SendData(data, dwDataLen);
   }
 }
 
@@ -355,7 +392,7 @@ bool WebServerRESTAPI::_Dump()
 
   writer.EndObject();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  _Response(200, JSONInit, s);
   return true;
 }
 #endif
@@ -374,7 +411,7 @@ bool WebServerRESTAPI::_GetServerList()
 	}
 	writer.EndArray();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  _Response(200, JSONInit, s);
   return true;
 }
 
@@ -393,7 +430,7 @@ bool WebServerRESTAPI::_GetClientList()
 	writer.EndArray();
 	theApp.clientlist->FindHeadClient();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  _Response(200, JSONInit, s);
 	return true;
 }
 
@@ -412,7 +449,7 @@ bool WebServerRESTAPI::_GetSharedList()
 	writer.EndArray();
 	theApp.sharedfiles->FindHeadKnownFile();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  _Response(200, JSONInit, s);
   return true;
 }
 
@@ -431,7 +468,7 @@ bool WebServerRESTAPI::_GetknownfList()
 	writer.EndArray();
 	theApp.knownfiles->FindHeadKnownFile();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  _Response(200, JSONInit, s);
   return true;
 }
 
