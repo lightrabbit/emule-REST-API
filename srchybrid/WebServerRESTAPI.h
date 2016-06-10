@@ -42,7 +42,7 @@ private:
   bool _GetClientList();
   bool _GetSharedList();
   bool _GetknownfList();
-  CString _Action(CString & param,CString action=NULL);
+  bool _Action(CMapStringToString & list, CString action = NULL);
 
 
 public:

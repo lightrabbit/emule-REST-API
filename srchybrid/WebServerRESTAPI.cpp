@@ -87,11 +87,11 @@ static const char* JSONInit = "Server: eMule REST API\r\nConnection: close\r\nCo
 class JSONWriter :public WriterT {
 public:
 	JSONWriter(StringBufferT&os) :WriterT(os) {}
-	
+
 	//或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
-  //这个事情在WebServerRESTAPI类中来做可能更合适
+	//这个事情在WebServerRESTAPI类中来做可能更合适
 	//Object应该读取那些种类的数据？
-	void Object(CServer* server){
+	void Object(CServer* server) {
 		StartObject();
 		Key(_T("name")); String(server->GetListName());
 		Key(_T("address")); String(server->GetAddress());
@@ -148,22 +148,22 @@ public:
 
 		StartObject();
 		Key(_T("uploadDatarate")); Uint(client->GetUploadDatarate());
-		Key(_T("userHash")); String(CString(ArrToHex(client->GetUserHash(),16)));
+		Key(_T("userHash")); String(CString(ArrToHex(client->GetUserHash(), 16)));
 		Key(_T("hashType")); Int(client->GetHashType());
 		Key(_T("isBanned")); Bool(client->IsBanned());
 		Key(_T("userName")); String(CString(client->GetUserName()));
 		Key(_T("SoftVer")); String(client->GetClientSoftVer());
 		/*
-			case SO_EMULE:			return _T("1");
-			case SO_OLDEMULE:		return _T("1");
-			case SO_EDONKEY:		return _T("0");
-			case SO_EDONKEYHYBRID:	return _T("h");
-			case SO_AMULE:			return _T("a");
-			case SO_SHAREAZA:		return _T("s");
-			case SO_MLDONKEY:		return _T("m");
-			case SO_LPHANT:			return _T("l");
-			case SO_URL:			return _T("u");
-			*/
+		case SO_EMULE:			return _T("1");
+		case SO_OLDEMULE:		return _T("1");
+		case SO_EDONKEY:		return _T("0");
+		case SO_EDONKEYHYBRID:	return _T("h");
+		case SO_AMULE:			return _T("a");
+		case SO_SHAREAZA:		return _T("s");
+		case SO_MLDONKEY:		return _T("m");
+		case SO_LPHANT:			return _T("l");
+		case SO_URL:			return _T("u");
+		*/
 		Key(_T("IP")); Uint(client->GetIP());
 		Key(_T("connectIP")); Uint(client->GetConnectIP());
 		Key(_T("userPort")); Uint(client->GetUserPort());
@@ -176,7 +176,7 @@ public:
 		Key(_T("version")); Uint(client->GetVersion());
 		Key(_T("muleVersion")); Uint(client->GetMuleVersion());
 		if (client->Credits())
-			Object(client->Credits(), index + 1);	
+			Object(client->Credits(), index + 1);
 		else {
 			Key(_T("credit")); String(_T("null"));
 		}
@@ -184,7 +184,7 @@ public:
 		Key(_T("isEd2kClient")); Bool(client->IsEd2kClient());
 		//Object(client->GetFriend(),index+1);//警告：可能产生无穷递归
 		EndObject();
-	
+
 	}
 	void Object(CFriend* pail, unsigned char index = 0)//因为friend是关键字，这里用pail 
 	{
@@ -205,7 +205,7 @@ public:
 		Key(_T("fileType")); String(file->GetFileType());
 		Key(_T("fileTypeDisplayName")); String(file->GetFileTypeDisplayStr());
 		Key(_T("hasNullHash")); Bool(file->HasNullHash());
-		Key(_T("fileHash")); String(ArrToHex(file->GetFileHash(),16));
+		Key(_T("fileHash")); String(ArrToHex(file->GetFileHash(), 16));
 		Key(_T("eD2kLink")); String(file->GetED2kLink());//without Hashset;HTMLTag;HostName;Source;dwSourceIP
 		Key(_T("fileSize")); Uint64((uint64)(file->GetFileSize()));//TODO: Object for EMFileSize
 		Key(_T("hasComment")); Bool(file->HasComment());
@@ -263,107 +263,117 @@ public:
 
 void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 {
-  CStringA header(pHeader, dwHeaderLen);
-  //处理头部
-  int tokenPos = 0;
-  Method = header.Tokenize(" ", tokenPos);
-  URL = header.Tokenize(" ", tokenPos);
-  header.Tokenize("\n", tokenPos);
+	CStringA header(pHeader, dwHeaderLen);
+	//处理头部
+	int tokenPos = 0;
+	Method = header.Tokenize(" ", tokenPos);
+	URL = header.Tokenize(" ", tokenPos);
+	header.Tokenize("\n", tokenPos);
 
-  while (tokenPos >= 0) {
-    CString key(header.Tokenize(":", tokenPos));
-    if (tokenPos < 0) break;
-    CString value(header.Tokenize("\n", tokenPos).Trim());
-    if (tokenPos < 0) break;
-    Headers[key] = value;
-  }
+	while (tokenPos >= 0) {
+		CString key(header.Tokenize(":", tokenPos));
+		if (tokenPos < 0) break;
+		CString value(header.Tokenize("\n", tokenPos).Trim());
+		if (tokenPos < 0) break;
+		Headers[key] = value;
+	}
 
-  //分离路径和查询字符串
-  int queryPos = URL.FindOneOf(_T("?"));
-  if (queryPos > 0) {
-    RawPath = OptUtf8ToStr(URLDecode(URL.Left(queryPos)));
-    RawQueryString = URL.Mid(queryPos + 1);
-  } else {
-    RawPath = URL;
-  }
-  
-  //处理路径
-  CString sToken;
-  tokenPos = 1;
-  while ((sToken = RawPath.Tokenize(_T("/?"), tokenPos)) != _T("")) {
-    Path.Add(sToken);
-  }
+	//分离路径和查询字符串
+	int queryPos = URL.FindOneOf(_T("?"));
+	if (queryPos > 0) {
+		RawPath = OptUtf8ToStr(URLDecode(URL.Left(queryPos)));
+		RawQueryString = URL.Mid(queryPos + 1);
+	}
+	else {
+		RawPath = URL;
+	}
 
-  //处理查询字符串
-  tokenPos = 0;
-  while (tokenPos >= 0) {
-    CString key(RawQueryString.Tokenize(_T("="), tokenPos));
-    if (tokenPos < 0) break;
-    CString value(RawQueryString.Tokenize(_T("&"), tokenPos));
-    if (tokenPos < 0) break;
-    QueryString[key] = OptUtf8ToStr(URLDecode(value));
-  }
+	//处理路径
+	CString sToken;
+	tokenPos = 1;
+	while ((sToken = RawPath.Tokenize(_T("/?"), tokenPos)) != _T("")) {
+		Path.Add(sToken);
+	}
+
+	//处理查询字符串
+	tokenPos = 0;
+	CString param = RawQueryString;
+	CString deal = param.Tokenize(_T("&"), tokenPos);
+	while (!deal.IsEmpty()) {
+		int eqpos = deal.Find('=');
+		if (eqpos > 0) {
+			CString keyword = OptUtf8ToStr(URLDecode(deal.Left(eqpos)));
+			CString value = OptUtf8ToStr(URLDecode(deal.Mid(eqpos + 1)));
+			QueryString[keyword] = value;
+		}
+		else {
+			QueryString[deal] = _T("");
+		}
+		deal = param.Tokenize(_T("&"), tokenPos);
+	};
+
+
 }
 
 #ifdef DEBUG
 bool WebServerRESTAPI::_Dump()
 {
-  StringBufferT s;
+	StringBufferT s;
 
-  WriterT writer(s);
-  writer.StartObject();
+	WriterT writer(s);
+	writer.StartObject();
 
-  writer.Key(_T("Method"));  writer.String(Method);
-  writer.Key(_T("URL"));  writer.String(URL);
-  writer.Key(_T("RawQueryString"));  writer.String(RawQueryString);
-  writer.Key(_T("RawPath"));  writer.String(RawPath);
+	writer.Key(_T("Method"));  writer.String(Method);
+	writer.Key(_T("URL"));  writer.String(URL);
+	writer.Key(_T("RawQueryString"));  writer.String(RawQueryString);
+	writer.Key(_T("RawPath"));  writer.String(RawPath);
 
-  writer.Key(_T("Headers"));
-  writer.StartObject();
-  {
-    POSITION i = Headers.GetStartPosition();
-    while (i != NULL) {
-      CString key;
-      CString value;
-      Headers.GetNextAssoc(i, key, value);
-      writer.Key(key);  writer.String(value);
-    }
-  }
-  writer.EndObject();
+	writer.Key(_T("Headers"));
+	writer.StartObject();
+	{
+		POSITION i = Headers.GetStartPosition();
+		while (i != NULL) {
+			CString key;
+			CString value;
+			Headers.GetNextAssoc(i, key, value);
+			writer.Key(key);  writer.String(value);
+		}
+	}
+	writer.EndObject();
 
-  writer.Key(_T("Path"));
-  writer.StartArray();
-  for (int i = 0; i < Path.GetCount(); i++)
-    writer.String(Path[i]);
-  writer.EndArray();
+	writer.Key(_T("Path"));
+	writer.StartArray();
+	for (int i = 0; i < Path.GetCount(); i++)
+		writer.String(Path[i]);
+	writer.EndArray();
 
-  writer.Key(_T("QueryString"));
-  writer.StartObject();
-  {
-    POSITION i = QueryString.GetStartPosition();
-    while (i != NULL) {
-      CString key;
-      CString value;
-      QueryString.GetNextAssoc(i, key, value);
-      writer.Key(key);  writer.String(value);
-    }
-  }
-  writer.EndObject();
+	writer.Key(_T("QueryString"));
+	writer.StartObject();
+	{
+		POSITION i = QueryString.GetStartPosition();
+		while (i != NULL) {
+			CString key;
+			CString value;
+			QueryString.GetNextAssoc(i, key, value);
+			writer.Key(key);  writer.String(value);
+		}
+	}
+	writer.EndObject();
 
-  writer.Key(_T("Data"));  writer.String(CString(CStringA(Data, DataLen)));
-  writer.Key(_T("DataLen")); writer.Uint(DataLen);
+	writer.Key(_T("Data"));  writer.String(CString(CStringA(Data, DataLen)));
+	writer.Key(_T("DataLen")); writer.Uint(DataLen);
 
-  writer.EndObject();
+	writer.EndObject();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-  return true;
+	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	return true;
 }
 #endif
 
 bool WebServerRESTAPI::_GetServerList()
 {
-  StringBufferT s;
-  JSONWriter writer(s);
+	StringBufferT s;
+	JSONWriter writer(s);
 
 	writer.StartArray();
 
@@ -374,8 +384,8 @@ bool WebServerRESTAPI::_GetServerList()
 	}
 	writer.EndArray();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-  return true;
+	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	return true;
 }
 
 bool WebServerRESTAPI::_GetClientList()
@@ -386,14 +396,14 @@ bool WebServerRESTAPI::_GetClientList()
 	writer.StartArray();
 	theApp.clientlist->FindHeadClient();
 	CUpDownClient* cur;
-	while(theApp.clientlist->usedToFindByNumber != NULL) {
+	while (theApp.clientlist->usedToFindByNumber != NULL) {
 		cur = theApp.clientlist->FindNextClient();
-		if(cur)writer.Object(cur);
+		if (cur)writer.Object(cur);
 	}
 	writer.EndArray();
 	theApp.clientlist->FindHeadClient();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
 	return true;
 }
 
@@ -412,8 +422,8 @@ bool WebServerRESTAPI::_GetSharedList()
 	writer.EndArray();
 	theApp.sharedfiles->FindHeadKnownFile();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-  return true;
+	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	return true;
 }
 
 bool WebServerRESTAPI::_GetknownfList()
@@ -431,8 +441,8 @@ bool WebServerRESTAPI::_GetknownfList()
 	writer.EndArray();
 	theApp.knownfiles->FindHeadKnownFile();
 
-  Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-  return true;
+	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	return true;
 }
 
 // TODO: 这里函数名貌似不对?
@@ -461,20 +471,8 @@ bool progressed2klink(CString & link, CString & action) {
 }
 
 // TODO: 这里可以根据兔子那边增加的请求头处理函数处理后的数据来优化代码结构
-CString WebServerRESTAPI::_Action(CString & param, CString action)
+bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 {
-	if (param == _T("")) return _T("{message:\"null\"}");
-	CMap<CString, LPCTSTR, CString, LPCTSTR> list;
-	CString keyword, value;
-	list.SetAt(_T("action"), action);
-	do {
-		int pos = 0,nextpos = 0;
-		keyword = param.Tokenize(_T("=&"), pos);
-		value = param.Tokenize(_T("&"), nextpos).Mid(pos);
-		list.SetAt(keyword, value);
-		param = param.Mid(nextpos);
-	} while (param != _T(""));
-
 	do {
 		CString link;
 		if (list.Lookup(_T("link"), link)) {
@@ -483,13 +481,14 @@ CString WebServerRESTAPI::_Action(CString & param, CString action)
 			type = link.Tokenize(_T(":"), iStart);
 			if (_T("ed2k") == type) {
 				if (progressed2klink(link, action)) {
-					list.SetAt(_T("result"), _T("no_support_action"));
+					//TODO:添加处理成功后的返回
+					break;
 				}
 				else {
 					break;
 				}
 			}
-			else if (_T("file") == type) {	
+			else if (_T("file") == type) {
 				break;
 			}
 			else if (_T("http") == type) {
@@ -503,26 +502,25 @@ CString WebServerRESTAPI::_Action(CString & param, CString action)
 			break;
 		}
 	} while (0);
-	if (!list[_T("resule")]) {
-		list.SetAt(_T("result"), _T("no_support_action"));
-	}
 
 	StringBufferT s;
 	JSONWriter writer(s);
 	POSITION pos = list.GetStartPosition();
 	writer.StartObject();
 	while (pos) {
+		CString keyword, value;
 		list.GetNextAssoc(pos, keyword, value);
 		writer.Key(keyword); writer.String(value);
 	}
 	writer.EndObject();
-  
-	return CString(CStringA(s.GetString()));
+
+	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+	return true;
 }
 
 WebServerRESTAPI::WebServerRESTAPI(CWebSocket *socket)
 {
-  Socket = socket;
+	Socket = socket;
 }
 
 WebServerRESTAPI::~WebServerRESTAPI()
@@ -531,42 +529,42 @@ WebServerRESTAPI::~WebServerRESTAPI()
 
 bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DWORD dwDataLen, in_addr inad)
 {
-  _ProcessHeader(pHeader, dwHeaderLen);
-  Data = pData;
-  DataLen = dwDataLen;
+	_ProcessHeader(pHeader, dwHeaderLen);
+	Data = pData;
+	DataLen = dwDataLen;
 
-  // 处理访问根路径的情况
-  if (Path.GetCount() == 0) return false;
+	// 处理访问根路径的情况
+	if (Path.GetCount() == 0) return false;
 
 	//TODO: 在这里增加共享文件,下载文件,上传队列,下载队列等处理,用if...else if...else的形式
 	if (Path[0] == _T("server")) {
-    return _GetServerList();
+		return _GetServerList();
 	}
 	else if (Path[0] == _T("client")) {
-    return _GetClientList();
+		return _GetClientList();
 	}
 	else if (Path[0] == _T("shared")) {
-    return _GetSharedList();
+		return _GetSharedList();
 	}
 	else if (Path[0] == _T("knownf")) {
-    return _GetknownfList();
+		return _GetknownfList();
 	}
 	else if (Path[0] == _T("action")) {
-    if (Path.GetCount() == 2) {
-      Socket->SendContent(JSONInit, _Action(RawQueryString, Path[1]));
-      return true;
-    } else {
-      return false;
-    }
+		if (Path.GetCount() == 2) {
+			return _Action(QueryString, Path[1]);
+		}
+		else {
+			return false;
+		}
 	}
-  else if (Path[0] == _T("dump")) {
+	else if (Path[0] == _T("dump")) {
 #ifdef DEBUG
-    return _Dump();
+		return _Dump();
 #else
-    return false;
+		return false;
 #endif
-  }
-	else{
-    return false;
+	}
+	else {
+		return false;
 	}
 }
