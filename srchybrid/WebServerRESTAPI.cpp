@@ -332,13 +332,58 @@ void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, StringBufferT
 
 void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, const void * data, DWORD dwDataLen)
 {
+  CString acceptEncoding;
+  bool isUseGzip;
+
+  if (Headers.Lookup(_T("accept-encoding"), acceptEncoding) && acceptEncoding.Find(_T("gzip")) >= 0) {
+    isUseGzip = true;
+  } else {
+    isUseGzip = false;
+  }
+
+
+  TCHAR* gzipOut = NULL;
+  long gzipLen = 0;
+
+  if (isUseGzip) {
+    bool bOk = false;
+    try {
+      uLongf destLen = dwDataLen + 1024;
+      gzipOut = new TCHAR[destLen];
+      if (CWebServer::_GzipCompress((Bytef*)gzipOut, &destLen, (const Bytef*)data, dwDataLen, Z_DEFAULT_COMPRESSION) == Z_OK) {
+        bOk = true;
+        gzipLen = destLen;
+      }
+    }
+    catch (...) {
+      ASSERT(0);
+    }
+    if (!bOk) {
+      isUseGzip = false;
+      delete[] gzipOut;
+      gzipOut = NULL;
+    }
+  }
+
   char szBuf[0x1000];
-  int nLen = _snprintf(szBuf, _countof(szBuf),
-    "HTTP/1.1 %d %s\r\n%sContent-Length: %ld\r\n\r\n",
-    status, _getStatusString(status), szStdResponse, dwDataLen);
-  if (nLen > 0) {
-    Socket->SendData(szBuf, nLen);
-    Socket->SendData(data, dwDataLen);
+  if (isUseGzip) {
+    int nLen = _snprintf(szBuf, _countof(szBuf),
+      "HTTP/1.1 %d %s\r\n%sContent-Encoding: gzip\r\nContent-Length: %ld\r\n\r\n",
+      status, _getStatusString(status), szStdResponse, gzipLen);
+    if (nLen > 0) {
+      Socket->SendData(szBuf, nLen);
+      Socket->SendData(gzipOut, gzipLen);
+    }
+    delete[] gzipOut;
+    gzipOut = NULL;
+  } else {
+    int nLen = _snprintf(szBuf, _countof(szBuf),
+      "HTTP/1.1 %d %s\r\n%sContent-Length: %ld\r\n\r\n",
+      status, _getStatusString(status), szStdResponse, dwDataLen);
+    if (nLen > 0) {
+      Socket->SendData(szBuf, nLen);
+      Socket->SendData(data, dwDataLen);
+    }
   }
 }
 
