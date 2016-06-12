@@ -347,6 +347,7 @@ struct WebServDef{
 class CWebServer 
 {
 	friend class CWebSocket;
+  friend class WebServerRESTAPI;
 
 public:
 	CWebServer(void);

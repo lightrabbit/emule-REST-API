@@ -47,35 +47,7 @@
 #include "Packets.h"
 #include "clientlist.h"
 
-
-#include <iostream>
-#include "rapidjson/reader.h"
-#include "rapidjson/writer.h"
-#ifdef DEBUG
-#include "rapidjson/prettywriter.h"
-#endif
-#include "rapidjson/filereadstream.h"
-#include "rapidjson/filewritestream.h"
-#include "rapidjson/error/en.h"
-
-
 using namespace rapidjson;
-
-#ifdef UNICODE
-typedef StringBuffer StringBufferT;
-#ifdef DEBUG
-typedef PrettyWriter<StringBufferT, UTF16<>> WriterT;
-#else
-typedef Writer<StringBufferT, UTF16<>> WriterT;
-#endif
-#else
-typedef StringBuffer StringBufferT;
-#ifdef DEBUG
-typedef PrettyWriter<StringBufferT> WriterT;
-#else
-typedef Writer<StringBufferT> WriterT;
-#endif
-#endif
 
 #ifdef DEBUG
 static const char* JSONInit = "Server: eMule REST API\r\nConnection: close\r\nContent-Type: application/json; charset=UTF-8\r\nAccess-Control-Allow-Origin: *\r\n";
@@ -87,11 +59,11 @@ static const char* JSONInit = "Server: eMule REST API\r\nConnection: close\r\nCo
 class JSONWriter :public WriterT {
 public:
 	JSONWriter(StringBufferT&os) :WriterT(os) {}
-
+	
 	//或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
 	//这个事情在WebServerRESTAPI类中来做可能更合适
 	//Object应该读取那些种类的数据？
-	void Object(CServer* server) {
+	void Object(CServer* server){
 		StartObject();
 		Key(_T("name")); String(server->GetListName());
 		Key(_T("address")); String(server->GetAddress());
@@ -148,22 +120,22 @@ public:
 
 		StartObject();
 		Key(_T("uploadDatarate")); Uint(client->GetUploadDatarate());
-		Key(_T("userHash")); String(CString(ArrToHex(client->GetUserHash(), 16)));
+		Key(_T("userHash")); String(CString(ArrToHex(client->GetUserHash(),16)));
 		Key(_T("hashType")); Int(client->GetHashType());
 		Key(_T("isBanned")); Bool(client->IsBanned());
 		Key(_T("userName")); String(CString(client->GetUserName()));
 		Key(_T("SoftVer")); String(client->GetClientSoftVer());
 		/*
-		case SO_EMULE:			return _T("1");
-		case SO_OLDEMULE:		return _T("1");
-		case SO_EDONKEY:		return _T("0");
-		case SO_EDONKEYHYBRID:	return _T("h");
-		case SO_AMULE:			return _T("a");
-		case SO_SHAREAZA:		return _T("s");
-		case SO_MLDONKEY:		return _T("m");
-		case SO_LPHANT:			return _T("l");
-		case SO_URL:			return _T("u");
-		*/
+			case SO_EMULE:			return _T("1");
+			case SO_OLDEMULE:		return _T("1");
+			case SO_EDONKEY:		return _T("0");
+			case SO_EDONKEYHYBRID:	return _T("h");
+			case SO_AMULE:			return _T("a");
+			case SO_SHAREAZA:		return _T("s");
+			case SO_MLDONKEY:		return _T("m");
+			case SO_LPHANT:			return _T("l");
+			case SO_URL:			return _T("u");
+			*/
 		Key(_T("IP")); Uint(client->GetIP());
 		Key(_T("connectIP")); Uint(client->GetConnectIP());
 		Key(_T("userPort")); Uint(client->GetUserPort());
@@ -184,7 +156,7 @@ public:
 		Key(_T("isEd2kClient")); Bool(client->IsEd2kClient());
 		//Object(client->GetFriend(),index+1);//警告：可能产生无穷递归
 		EndObject();
-
+	
 	}
 	void Object(CFriend* pail, unsigned char index = 0)//因为friend是关键字，这里用pail 
 	{
@@ -205,7 +177,7 @@ public:
 		Key(_T("fileType")); String(file->GetFileType());
 		Key(_T("fileTypeDisplayName")); String(file->GetFileTypeDisplayStr());
 		Key(_T("hasNullHash")); Bool(file->HasNullHash());
-		Key(_T("fileHash")); String(ArrToHex(file->GetFileHash(), 16));
+		Key(_T("fileHash")); String(ArrToHex(file->GetFileHash(),16));
 		Key(_T("eD2kLink")); String(file->GetED2kLink());//without Hashset;HTMLTag;HostName;Source;dwSourceIP
 		Key(_T("fileSize")); Uint64((uint64)(file->GetFileSize()));//TODO: Object for EMFileSize
 		Key(_T("hasComment")); Bool(file->HasComment());
@@ -261,6 +233,54 @@ public:
 };
 //以上
 
+const char * WebServerRESTAPI::_getStatusString(int status)
+{
+  switch (status) {
+    case 100: return "Continue";
+    case 101: return "Switching Protocols";
+    case 200: return "OK";
+    case 201: return "Created";
+    case 202: return "Accepted";
+    case 203: return "Non-Authoritative Information";
+    case 204: return "No Content";
+    case 205: return "Reset Content";
+    case 206: return "Partial Content";
+    case 300: return "Multiple Choices";
+    case 301: return "Moved Permanently";
+    case 302: return "Found";
+    case 303: return "See Other";
+    case 304: return "Not Modified";
+    case 305: return "Use Proxy";
+      //case 306: return "(reserved)";
+    case 307: return "Temporary Redirect";
+    case 400: return "Bad Request";
+    case 401: return "Unauthorized";
+    case 402: return "Payment Required";
+    case 403: return "Forbidden";
+    case 404: return "Not Found";
+    case 405: return "Method Not Allowed";
+    case 406: return "Not Acceptable";
+    case 407: return "Proxy Authentication Required";
+    case 408: return "Request Timeout";
+    case 409: return "Conflict";
+    case 410: return "Gone";
+    case 411: return "Length Required";
+    case 412: return "Precondition Failed";
+    case 413: return "Request Entity Too Large";
+    case 414: return "Request-URI Too Long";
+    case 415: return "Unsupported Media Type";
+    case 416: return "Requested Range Not Satisfiable";
+    case 417: return "Expectation Failed";
+    case 500: return "Internal Server Error";
+    case 501: return "Not Implemented";
+    case 502: return "Bad Gateway";
+    case 503: return "Service Unavailable";
+    case 504: return "Gateway Timeout";
+    case 505: return "HTTP Version Not Supported";
+    default: throw CString("Not supported status code.");
+  }
+}
+
 void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 {
 	CStringA header(pHeader, dwHeaderLen);
@@ -312,7 +332,66 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 		deal = param.Tokenize(_T("&"), tokenPos);
 	};
 
+void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, StringBufferT & data)
+{
+  _Response(status, szStdResponse, data.GetString(), data.GetSize());
+}
 
+void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, const void * data, DWORD dwDataLen)
+{
+  CString acceptEncoding;
+  bool isUseGzip;
+
+  if (Headers.Lookup(_T("accept-encoding"), acceptEncoding) && acceptEncoding.Find(_T("gzip")) >= 0) {
+    isUseGzip = true;
+  } else {
+    isUseGzip = false;
+  }
+
+
+  TCHAR* gzipOut = NULL;
+  long gzipLen = 0;
+
+  if (isUseGzip) {
+    bool bOk = false;
+    try {
+      uLongf destLen = dwDataLen + 1024;
+      gzipOut = new TCHAR[destLen];
+      if (CWebServer::_GzipCompress((Bytef*)gzipOut, &destLen, (const Bytef*)data, dwDataLen, Z_DEFAULT_COMPRESSION) == Z_OK) {
+        bOk = true;
+        gzipLen = destLen;
+      }
+    }
+    catch (...) {
+      ASSERT(0);
+    }
+    if (!bOk) {
+      isUseGzip = false;
+      delete[] gzipOut;
+      gzipOut = NULL;
+    }
+  }
+
+  char szBuf[0x1000];
+  if (isUseGzip) {
+    int nLen = _snprintf(szBuf, _countof(szBuf),
+      "HTTP/1.1 %d %s\r\n%sContent-Encoding: gzip\r\nContent-Length: %ld\r\n\r\n",
+      status, _getStatusString(status), szStdResponse, gzipLen);
+    if (nLen > 0) {
+      Socket->SendData(szBuf, nLen);
+      Socket->SendData(gzipOut, gzipLen);
+    }
+    delete[] gzipOut;
+    gzipOut = NULL;
+  } else {
+    int nLen = _snprintf(szBuf, _countof(szBuf),
+      "HTTP/1.1 %d %s\r\n%sContent-Length: %ld\r\n\r\n",
+      status, _getStatusString(status), szStdResponse, dwDataLen);
+    if (nLen > 0) {
+      Socket->SendData(szBuf, nLen);
+      Socket->SendData(data, dwDataLen);
+    }
+  }
 }
 
 #ifdef DEBUG
@@ -365,8 +444,8 @@ bool WebServerRESTAPI::_Dump()
 
 	writer.EndObject();
 
-	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-	return true;
+  _Response(200, JSONInit, s);
+  return true;
 }
 #endif
 
@@ -384,8 +463,8 @@ bool WebServerRESTAPI::_GetServerList()
 	}
 	writer.EndArray();
 
-	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-	return true;
+  _Response(200, JSONInit, s);
+  return true;
 }
 
 bool WebServerRESTAPI::_GetClientList()
@@ -403,7 +482,7 @@ bool WebServerRESTAPI::_GetClientList()
 	writer.EndArray();
 	theApp.clientlist->FindHeadClient();
 
-	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
+  _Response(200, JSONInit, s);
 	return true;
 }
 
@@ -422,8 +501,8 @@ bool WebServerRESTAPI::_GetSharedList()
 	writer.EndArray();
 	theApp.sharedfiles->FindHeadKnownFile();
 
-	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-	return true;
+  _Response(200, JSONInit, s);
+  return true;
 }
 
 bool WebServerRESTAPI::_GetknownfList()
@@ -441,8 +520,8 @@ bool WebServerRESTAPI::_GetknownfList()
 	writer.EndArray();
 	theApp.knownfiles->FindHeadKnownFile();
 
-	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
-	return true;
+  _Response(200, JSONInit, s);
+  return true;
 }
 
 // TODO: 这里函数名貌似不对?

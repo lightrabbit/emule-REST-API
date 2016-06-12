@@ -1,7 +1,38 @@
 #pragma once
 #include "WebServer.h"
+
+#include "rapidjson/reader.h"
+#include "rapidjson/writer.h"
+#ifdef DEBUG
+#include "rapidjson/prettywriter.h"
+#endif
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/filewritestream.h"
+#include "rapidjson/error/en.h"
+
+namespace rapidjson
+{
+#ifdef UNICODE
+  typedef StringBuffer StringBufferT;
+#ifdef DEBUG
+  typedef PrettyWriter<StringBufferT, UTF16<>> WriterT;
+#else
+  typedef Writer<StringBufferT, UTF16<>> WriterT;
+#endif
+#else
+  typedef StringBuffer StringBufferT;
+#ifdef DEBUG
+  typedef PrettyWriter<StringBufferT> WriterT;
+#else
+  typedef Writer<StringBufferT> WriterT;
+#endif
+#endif
+}
+
 class WebServerRESTAPI
 {
+  // 获得HTTP状态码对应提示字符串
+  static const char* _getStatusString(int status);
 private:
   // 对应的Socket
   CWebSocket *Socket;
@@ -32,7 +63,9 @@ private:
 private:
   // 处理请求头
   void _ProcessHeader(char* pHeader, DWORD dwHeaderLen);
-
+  // 返回结果
+  void _Response(int status, LPCSTR szStdResponse, rapidjson::StringBufferT& data);
+  void _Response(int status, LPCSTR szStdResponse, const void* data, DWORD dwDataLen);
 #ifdef DEBUG
   // 调试用函数,将请求所包含的内容解析后原样返回
   bool _Dump();
