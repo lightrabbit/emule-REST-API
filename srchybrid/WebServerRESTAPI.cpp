@@ -293,9 +293,9 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
   while (tokenPos >= 0) {
     CString key(header.Tokenize(":", tokenPos));
     if (tokenPos < 0) break;
-    CString value(header.Tokenize("\n", tokenPos).Trim());
+    CString value(header.Tokenize("\n", tokenPos).TrimLeft());
     if (tokenPos < 0) break;
-    Headers[key] = value;
+    Headers[key.MakeLower()] = value;
   }
 
   //分离路径和查询字符串
