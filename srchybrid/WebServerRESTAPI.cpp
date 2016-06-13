@@ -513,34 +513,138 @@ bool WebServerRESTAPI::_GetknownfList()
   return true;
 }
 
-// TODO: 这里函数名貌似不对?
-bool ProgressEd2KLink(CString & link, CString & action) {
-	CString type;
-	int iStart = 0;
-	type = link.Tokenize(_T("|"), iStart);
-	type = link.Tokenize(_T("|"), iStart);
-	if (_T("friend") == type) {
-		if (_T("add") == action) {
-			theApp.emuledlg->ProcessED2KLink(link);
+//抄录自EmuleDlg
+bool ProgressED2KLink(CString & link, CString & action) {
+	if (action == _T("add")) {
+		try {
+			CED2KLink* pLink = CED2KLink::CreateLinkFromUrl(link);
+			switch (pLink->GetKind()) {
+			case CED2KLink::kFile:
+			{
+				// ==> Smart Category Control (SCC) [khaos/SiRoB/Stulle] - Stulle
+				/*
+				CED2KFileLink* pFileLink = pLink->GetFileLink();
+				_ASSERT(pFileLink !=0);
+				//Xman [MoNKi: -Check already downloaded files-]
+				if(theApp.knownfiles->CheckAlreadyDownloadedFileQuestion(pFileLink->GetHashKey(),pFileLink->GetName()))
+				{
+				theApp.downloadqueue->AddFileLinkToDownload(pFileLink,searchwnd->GetSelectedCat());
+				}
+				//Xman end
+				*/
+				CED2KFileLink* pFileLink = (CED2KFileLink*)CED2KLink::CreateLinkFromUrl(link.Trim());
+				_ASSERT(pFileLink != 0);
+				if (theApp.knownfiles->CheckAlreadyDownloadedFileQuestion(pFileLink->GetHashKey(), pFileLink->GetName()))
+				{
+					theApp.downloadqueue->AddFileLinkToDownload(pFileLink, -1, true);
+				}
+				// <== Smart Category Control (SCC) [khaos/SiRoB/Stulle] - Stulle
+			}
+			break;
+			case CED2KLink::kServerList:
+			{
+				CED2KServerListLink* pListLink = pLink->GetServerListLink();
+				_ASSERT(pListLink != 0);
+				CString strAddress = pListLink->GetAddress();
+				if (strAddress.GetLength() != 0)
+					theApp.emuledlg->serverwnd->UpdateServerMetFromURL(strAddress);
+			}
+			break;
+			case CED2KLink::kNodesList:
+			{
+				CED2KNodesListLink* pListLink = pLink->GetNodesListLink();
+				_ASSERT(pListLink != 0);
+				CString strAddress = pListLink->GetAddress();
+				// Becasue the nodes.dat is vital for kad and its routing and doesn't needs to be updated in general
+				// we request a confirm to avoid accidental / malicious updating of this file. This is a bit inconsitent
+				// as the same kinda applies to the server.met, but those require more updates and are easier to understand
+				CString strConfirm;
+				strConfirm.Format(GetResString(IDS_CONFIRMNODESDOWNLOAD), strAddress);
+				if (strAddress.GetLength() != 0 && AfxMessageBox(strConfirm, MB_YESNO | MB_ICONQUESTION, 0) == IDYES)
+					theApp.emuledlg->kademliawnd->UpdateNodesDatFromURL(strAddress);
+			}
+			break;
+			case CED2KLink::kServer:
+			{
+				CString defName;
+				CED2KServerLink* pSrvLink = pLink->GetServerLink();
+				_ASSERT(pSrvLink != 0);
+				CServer* pSrv = new CServer(pSrvLink->GetPort(), pSrvLink->GetAddress());
+				_ASSERT(pSrv != 0);
+				pSrvLink->GetDefaultName(defName);
+				pSrv->SetListName(defName);
+
+				// Barry - Default all new servers to high priority
+				if (thePrefs.GetManualAddedServersHighPriority())
+					pSrv->SetPreference(SRV_PR_HIGH);
+
+				if (!theApp.emuledlg->serverwnd->serverlistctrl.AddServer(pSrv, true))
+					delete pSrv;
+				else
+					AddLogLine(true, GetResString(IDS_SERVERADDED), pSrv->GetListName());
+			}
+			break;
+			case CED2KLink::kSearch:
+			{
+				CED2KSearchLink* pListLink = pLink->GetSearchLink();
+				_ASSERT(pListLink != 0);
+				theApp.emuledlg->SetActiveDialog(theApp.emuledlg->searchwnd);
+				theApp.emuledlg->searchwnd->ProcessEd2kSearchLinkRequest(pListLink->GetSearchTerm());
+			}
+			break;
+			// MORPH START - Added by Commander, Friendlinks [emulEspaa] - added by zz_fly
+			case CED2KLink::kFriend:
+			{
+				// Better with dynamic_cast, but no RTTI enabled in the project
+				CED2KFriendLink* pFriendLink = static_cast<CED2KFriendLink*>(pLink);
+				uchar userHash[16];
+				pFriendLink->GetUserHash(userHash);
+
+				if (!theApp.friendlist->IsAlreadyFriend(userHash))
+					theApp.friendlist->AddFriend(userHash, 0U, 0U, 0U, 0U, pFriendLink->GetUserName(), 1U);
+				else
+				{
+					CString msg;
+					msg.Format(GetResString(IDS_USER_ALREADY_FRIEND), pFriendLink->GetUserName());
+					AddLogLine(true, msg);
+				}
+			}
+			break;
+			case CED2KLink::kFriendList:
+			{
+				// Better with dynamic_cast, but no RTTI enabled in the project
+				CED2KFriendListLink* pFrndLstLink = static_cast<CED2KFriendListLink*>(pLink);
+				CString sAddress = pFrndLstLink->GetAddress();
+				/*if (!sAddress.IsEmpty())
+					this->chatwnd->UpdateEmfriendsMetFromURL(sAddress);
+				*///这里总是有问题，我解决不了Orz
+			}
+			break;
+			// MORPH END - Added by Commander, Friendlinks [emulEspaa]
+			default:
+				break;
+			}
+			delete pLink;
 		}
-		else if (_T("del") == action) {
-			return false;
+		catch (CString strError) {
+			LogWarning(LOG_STATUSBAR, GetResString(IDS_LINKNOTADDED) + _T(" - ") + strError);
+		}
+		catch (...) {
+			LogWarning(LOG_STATUSBAR, GetResString(IDS_LINKNOTADDED));
 		}
 	}
-	else if (_T("server") == type) {
-		if (_T("add") == action) {
-			theApp.emuledlg->ProcessED2KLink(link);
-		}
-		else if (_T("del") == action) {
-			return false;
-		};
+else return false;
 		return true;
-	}
+	
 }
 
 // TODO: 这里可以根据兔子那边增加的请求头处理函数处理后的数据来优化代码结构
 bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 {
+	StringBufferT s;
+	JSONWriter writer(s);
+
+	writer.StartArray();
 	do {
 		CString link;
 		if (list.Lookup(_T("link"), link)) {
@@ -548,9 +652,9 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 			CString type;
 			type = link.Tokenize(_T(":"), iStart);
 			if (_T("ed2k") == type) {
-				if (ProgressEd2KLink(link, action)) {
+				if (ProgressED2KLink(link, action)) {
 					//TODO:添加处理成功后的返回
-					break;
+					writer.Key(_T("result")); writer.String(_T("Prosess_ED2K_Link_Success"));
 				}
 				else {
 					break;
@@ -570,6 +674,12 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 			break;
 		}
 	} while (0);
+
+
+	writer.EndArray();
+	theApp.knownfiles->FindHeadKnownFile();
+
+	_Response(200, JSONInit, s);
 	return true;
 }
 
