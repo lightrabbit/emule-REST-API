@@ -60,9 +60,6 @@ class JSONWriter :public WriterT {
 public:
 	JSONWriter(StringBufferT&os) :WriterT(os) {}
 	
-	//或许需要增加emule的版本？并像游览器一样提供操作系统等的信息？ By 柚子
-	//这个事情在WebServerRESTAPI类中来做可能更合适
-	//Object应该读取那些种类的数据？
 	void Object(CServer* server){
 		StartObject();
 		Key(_T("name")); String(server->GetListName());
@@ -87,17 +84,12 @@ public:
 		EndObject();
 	}
 
-	//我正在尝试写一个返回好友的函数，因为好友列表所需要返回的数据相对独立
-	//我忽然想到 WriteObiect的函数名或许有歧义，
-	//可能与前端操作对象（比如增加好友）的函数名重复？@ 2016-5-24 3：00
-	//CFriend类的风格与CServer类的风格有一定差异，需要注意一下。
 	void Object(CClientCredits* credit, unsigned char index = 0) {
 		if (!index)StartObject();
 		Key(_T("uploadedTotal")); Uint64(credit->GetUploadedTotal());
 		Key(_T("downloadedTotal")); Uint64(credit->GetDownloadedTotal());
 		if (!index)EndObject();
 	}
-	//TODO:完成CUpDownClient类型的返回
 	//list=CClientList
 	CString ArrToHex(const uchar* str, unsigned int len) {
 		const char T16[] = "0123456789abcdef";
@@ -166,10 +158,6 @@ public:
 		//Key(_T("isFriendSlotted")); Bool(pail->GetFriendSlot());
 		if (!index)EndObject();
 	}
-	//似乎返回CFriend是完全没有必要的？返回CUpDownClient类就好了
-	//里面也有isFriend方法，如果需要返回所有Friend，通过查询所有
-	//isFriend()=Ture的Client就好
-
 
 	void Object(CAbstractFile* file, unsigned char index = 0) {
 		if (!index)StartObject();
@@ -179,7 +167,7 @@ public:
 		Key(_T("hasNullHash")); Bool(file->HasNullHash());
 		Key(_T("fileHash")); String(ArrToHex(file->GetFileHash(),16));
 		Key(_T("eD2kLink")); String(file->GetED2kLink());//without Hashset;HTMLTag;HostName;Source;dwSourceIP
-		Key(_T("fileSize")); Uint64((uint64)(file->GetFileSize()));//TODO: Object for EMFileSize
+		Key(_T("fileSize")); Uint64((uint64)(file->GetFileSize()));
 		Key(_T("hasComment")); Bool(file->HasComment());
 		Key(_T("hasUserRating")); Bool(file->HasRating());
 		Key(_T("userRating")); Int(file->UserRating());
@@ -204,7 +192,7 @@ public:
 		Key(_T("upPriorityDisplayString")); String(file->GetUpPriorityDisplayString());
 		Key(_T("utcLastModified")); Int(file->m_tUtcLastModified);
 		Key(_T("completeSourcesTime")); Int(file->m_nCompleteSourcesTime);
-		//Object(writer,file->m_ClientUploadList)//TODO: WriterObject for CUpDownClientPtrList
+		//Object(writer,file->m_ClientUploadList)	//TODO: WriterObject for CUpDownClientPtrList
 		if (!index)EndObject();
 	}
 	void Object(CAICHHash* hash, unsigned char index = 0) {
@@ -277,7 +265,7 @@ const char * WebServerRESTAPI::_getStatusString(int status)
     case 503: return "Service Unavailable";
     case 504: return "Gateway Timeout";
     case 505: return "HTTP Version Not Supported";
-    default: throw CString("Not supported status code.");
+    default: throw CString("Not supported status code.");//这里不应该抛异常吧
   }
 }
 
@@ -330,7 +318,8 @@ void WebServerRESTAPI::_ProcessHeader(char * pHeader, DWORD dwHeaderLen)
 			QueryString[deal] = _T("");
 		}
 		deal = param.Tokenize(_T("&"), tokenPos);
-	};
+	}
+}
 
 void WebServerRESTAPI::_Response(int status, LPCSTR szStdResponse, StringBufferT & data)
 {
@@ -525,7 +514,7 @@ bool WebServerRESTAPI::_GetknownfList()
 }
 
 // TODO: 这里函数名貌似不对?
-bool progressed2klink(CString & link, CString & action) {
+bool ProgressEd2KLink(CString & link, CString & action) {
 	CString type;
 	int iStart = 0;
 	type = link.Tokenize(_T("|"), iStart);
@@ -559,7 +548,7 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 			CString type;
 			type = link.Tokenize(_T(":"), iStart);
 			if (_T("ed2k") == type) {
-				if (progressed2klink(link, action)) {
+				if (ProgressEd2KLink(link, action)) {
 					//TODO:添加处理成功后的返回
 					break;
 				}
@@ -581,19 +570,6 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 			break;
 		}
 	} while (0);
-
-	StringBufferT s;
-	JSONWriter writer(s);
-	POSITION pos = list.GetStartPosition();
-	writer.StartObject();
-	while (pos) {
-		CString keyword, value;
-		list.GetNextAssoc(pos, keyword, value);
-		writer.Key(keyword); writer.String(value);
-	}
-	writer.EndObject();
-
-	Socket->SendContent(JSONInit, s.GetString(), s.GetSize());
 	return true;
 }
 
