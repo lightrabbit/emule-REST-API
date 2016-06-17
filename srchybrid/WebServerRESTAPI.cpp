@@ -536,7 +536,7 @@ bool ProgressED2KLink(CString & link, CString & action) {
 				_ASSERT(pFileLink != 0);
 				if (theApp.knownfiles->CheckAlreadyDownloadedFileQuestion(pFileLink->GetHashKey(), pFileLink->GetName()))
 				{
-					theApp.downloadqueue->AddFileLinkToDownload(pFileLink, -1, true);
+					theApp.downloadqueue->AddFileLinkToDownload(pFileLink, -1, true,true);
 				}
 				// <== Smart Category Control (SCC) [khaos/SiRoB/Stulle] - Stulle
 			}
@@ -644,7 +644,7 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 	StringBufferT s;
 	JSONWriter writer(s);
 
-	writer.StartArray();
+	writer.StartObject();
 	do {
 		CString link;
 		if (list.Lookup(_T("link"), link)) {
@@ -676,7 +676,7 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 	} while (0);
 
 
-	writer.EndArray();
+	writer.EndObject();
 	theApp.knownfiles->FindHeadKnownFile();
 
 	_Response(200, JSONInit, s);
