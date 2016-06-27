@@ -75,6 +75,7 @@ private:
   bool _GetClientList();
   bool _GetSharedList();
   bool _GetknownfList();
+  bool _GetBasicInfo();
   bool _Action(CMapStringToString & list, CString action = NULL);
 
 

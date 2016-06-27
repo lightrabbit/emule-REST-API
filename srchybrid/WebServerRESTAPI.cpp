@@ -61,6 +61,10 @@ public:
 	JSONWriter(StringBufferT&os) :WriterT(os) {}
 	
 	void Object(CServer* server){
+		if (server == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		StartObject();
 		Key(_T("name")); String(server->GetListName());
 		Key(_T("address")); String(server->GetAddress());
@@ -85,6 +89,10 @@ public:
 	}
 
 	void Object(CClientCredits* credit, unsigned char index = 0) {
+		if (credit == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		if (!index)StartObject();
 		Key(_T("uploadedTotal")); Uint64(credit->GetUploadedTotal());
 		Key(_T("downloadedTotal")); Uint64(credit->GetDownloadedTotal());
@@ -109,7 +117,10 @@ public:
 	  //CFriend类中有GetLinkedClient()方法返回CUpDownClient类
 	  //如何才能避免无限递归？
 	  //一个可行的方法是，所有Object中调用的Object方法，只返回索引信息，不返回详细信息
-
+		if (client == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		StartObject();
 		Key(_T("uploadDatarate")); Uint(client->GetUploadDatarate());
 		Key(_T("userHash")); String(CString(ArrToHex(client->GetUserHash(),16)));
@@ -152,6 +163,10 @@ public:
 	}
 	void Object(CFriend* pail, unsigned char index = 0)//因为friend是关键字，这里用pail 
 	{
+		if (pail == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		if (!index)StartObject();
 		Key(_T("lastSeen")); Uint64(pail->m_dwLastSeen);//有可能是64位时间
 		Key(_T("friendName")); String(pail->m_strName);
@@ -160,6 +175,10 @@ public:
 	}
 
 	void Object(CAbstractFile* file, unsigned char index = 0) {
+		if (file == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		if (!index)StartObject();
 		Key(_T("fileName")); String(file->GetFileName());
 		Key(_T("fileType")); String(file->GetFileType());
@@ -178,6 +197,10 @@ public:
 		if (!index)EndObject();
 	}
 	void Object(CShareableFile* file, unsigned char index = 0) {
+		if (file == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		if (!index)StartObject();
 		Object((CAbstractFile*)file, index + 1);
 		Key(_T("path")); String(file->GetPath());
@@ -185,6 +208,10 @@ public:
 		if (!index)EndObject();
 	}
 	void Object(CKnownFile* file, unsigned char index = 0) {
+		if (file == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		if (!index)StartObject();
 		Object((CShareableFile*)file, index + 1);
 		Key(_T("utcFileDate")); Int(file->GetUtcFileDate());
@@ -196,21 +223,37 @@ public:
 		if (!index)EndObject();
 	}
 	void Object(CAICHHash* hash, unsigned char index = 0) {
+		if (hash == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		//StartObject();
 		String(hash->GetString());
 		//EndObject();
 	}
 	void Object(CAICHHashTree* hash, unsigned char index = 0) {
+		if (hash == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		//StartObject();
 		Object(&(hash->m_Hash));
 		//EndObject();
 	}
 	void Object(CAICHRecoveryHashSet* hash, unsigned char index = 0) {
+		if (hash == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		//StartObject();
 		Object(&(hash->m_pHashTree));
 		//EndObject();
 	}
 	void Object(CPartFile* file, unsigned char index = 0) {
+		if (file == NULL) {
+			String(_T("NULL"));
+			return;
+		}
 		if (!index)StartObject();
 		Object((CKnownFile*)file, index + 1);
 		Key(_T("isPartFile")); Bool(file->IsPartFile());
@@ -682,6 +725,26 @@ bool WebServerRESTAPI::_Action(CMapStringToString & list, CString action)
 	_Response(200, JSONInit, s);
 	return true;
 }
+bool WebServerRESTAPI::_GetBasicInfo() {
+	StringBufferT s;
+	JSONWriter writer(s);
+	writer.StartObject();
+	writer.Key(_T("Kad"));writer.StartObject();{
+		using namespace Kademlia;
+		writer.Key(_T("isRunning")); writer.Bool(CKademlia::IsRunning());
+		writer.Key(_T("isConnected")); writer.Bool(CKademlia::IsConnected());
+		writer.Key(_T("isFirewalled")); writer.Bool(CKademlia::IsFirewalled());
+
+		writer.Key(_T("nodeCount")); writer.Uint(CKademlia::GetKademliaUsers());
+		writer.Key(_T("fileCount")); writer.Uint(CKademlia::GetKademliaFiles());
+	}writer.EndObject();
+	writer.Key(_T("Server")); writer.Object(theApp.serverconnect->GetCurrentServer());
+
+
+	writer.EndObject();
+	_Response(200, JSONInit, s);
+	return true;
+}
 
 WebServerRESTAPI::WebServerRESTAPI(CWebSocket *socket)
 {
@@ -713,6 +776,9 @@ bool WebServerRESTAPI::Process(char* pHeader, DWORD dwHeaderLen, char* pData, DW
 	}
 	else if (Path[0] == _T("knownf")) {
 		return _GetknownfList();
+	}
+	else if (Path[0]==_T("basicinfo")) {
+		return _GetBasicInfo();
 	}
 	else if (Path[0] == _T("action")) {
 		if (Path.GetCount() == 2) {
